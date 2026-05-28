@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>제12기 SSP 수첩</title>
+<meta name="theme-color" content="#2563eb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="SSP 수첩">
+<link rel="manifest" id="pwa-manifest">
+<style>
+:root{
+  --bg:#f0f4ff;--surface:#fff;--surface2:#f7f9ff;--border:#e2e8f8;
+  --text:#1e2d5a;--dim:#6b7ea8;--faint:#a0aec8;
+  --blue:#2563eb;--bd:rgba(37,99,235,0.1);--bb:rgba(37,99,235,0.25);
+  --green:#059669;--gd:rgba(5,150,105,0.1);--gb:rgba(5,150,105,0.25);
+  --purple:#7c3aed;--pd:rgba(124,58,237,0.1);--pb:rgba(124,58,237,0.25);
+  --gold:#d97706;--nav:62px;--hdr:54px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;height:-webkit-fill-available;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;font-size:14px}
+#app{max-width:480px;margin:0 auto;height:100vh;height:100dvh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+#app::before{content:'';position:fixed;top:0;left:50%;transform:translateX(-50%);width:480px;height:40vh;background:linear-gradient(180deg,rgba(37,99,235,0.06) 0%,transparent 100%);pointer-events:none;z-index:0}
+header{position:relative;z-index:100;height:var(--hdr);background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 18px;flex-shrink:0;box-shadow:0 1px 8px rgba(37,99,235,0.08)}
+.li{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#1e40af,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff}
+.logo{display:flex;align-items:center;gap:10px}
+.t1{font-size:14px;font-weight:800;color:var(--blue);letter-spacing:.5px;line-height:1}
+.t2{font-size:8px;color:var(--faint);letter-spacing:.8px;margin-top:2px}
+.badge{font-size:10px;color:var(--blue);background:var(--bd);border:1px solid var(--bb);padding:3px 10px;border-radius:20px;font-weight:600}
+#pages{flex:1;overflow:hidden;position:relative;z-index:1}
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;display:none;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav) + env(safe-area-inset-bottom) + 8px)}
+.page.active{display:block}
+nav{position:relative;z-index:100;height:calc(var(--nav) + env(safe-area-inset-bottom));background:rgba(255,255,255,0.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;flex-shrink:0;box-shadow:0 -2px 12px rgba(37,99,235,0.07);padding-bottom:env(safe-area-inset-bottom)}
+.nb{flex:1;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--faint);transition:color .2s;position:relative;padding:0;font-family:inherit}
+.nb.on{color:var(--blue)}
+.nb::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:0;height:2.5px;border-radius:2px;background:var(--blue);transition:width .2s}
+.nb.on::before{width:28px}
+.ni{font-size:20px;line-height:1}
+.nl{font-size:10px;font-weight:500}
+.nb.on .nl{font-weight:700}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px 14px;margin-bottom:7px;box-shadow:0 1px 4px rgba(37,99,235,0.05)}
+.card:active{background:#f0f4ff}
+.stitle{font-size:10px;color:var(--faint);letter-spacing:1.5px;margin-bottom:10px;font-weight:600}
+.pill{display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px}
+.pg{background:rgba(217,119,6,.12);color:var(--gold)}
+.ps{background:rgba(100,116,139,.12);color:#475569}
+.pb2{background:var(--bd);color:var(--blue)}
+.pr{background:rgba(220,38,38,.1);color:#dc2626}
+.pt{background:rgba(5,150,105,.1);color:var(--green)}
+.ds{background:var(--bd);color:var(--blue);border:1px solid var(--bb)}
+.gs{background:var(--gd);color:var(--green);border:1px solid var(--gb)}
+.ms{background:var(--pd);color:var(--purple);border:1px solid var(--pb)}
+.av{border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;letter-spacing:-.5px;flex-shrink:0}
+.av-s{width:36px;height:36px;font-size:11px;border-radius:9px}
+.av-m{width:44px;height:44px;font-size:13px}
+.av-l{width:58px;height:58px;font-size:18px;border-radius:16px}
+.av.d{background:var(--bd);border:1.5px solid var(--bb);color:var(--blue)}
+.av.g{background:var(--gd);border:1.5px solid var(--gb);color:var(--green)}
+.av.p{background:var(--pd);border:1.5px solid var(--pb);color:var(--purple)}
+.ir{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(37,99,235,0.04)}
+.ir .ico{font-size:16px;flex-shrink:0}
+.ir .lbl{font-size:9px;color:var(--faint);margin-bottom:2px;font-weight:600}
+.ir .val{font-size:12px;color:var(--text)}
+/* HOME */
+.hero{margin:16px;padding:22px 20px;background:linear-gradient(135deg,#1e40af,#3b82f6);border-radius:20px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(37,99,235,0.25)}
+.hero::after{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;background:rgba(255,255,255,.12);border-radius:50%;pointer-events:none}
+.hero::before{content:'';position:absolute;left:-30px;bottom:-30px;width:130px;height:130px;background:rgba(255,255,255,.07);border-radius:50%;pointer-events:none}
+.hk{font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;margin-bottom:6px}
+.ht{font-size:28px;font-weight:900;line-height:1.15;margin-bottom:4px;color:#fff}
+.hs{font-size:12px;color:rgba(255,255,255,.7);margin-bottom:18px}
+.hst{display:flex;gap:8px}
+.hsc{flex:1;background:rgba(255,255,255,.18);border-radius:12px;padding:10px 8px;text-align:center}
+.hsc .sv{font-size:19px;font-weight:900;color:#fff;line-height:1}
+.hsc .sv span{font-size:11px}
+.hsc .sl{font-size:9px;color:rgba(255,255,255,.65);margin-top:3px}
+.dc{border-radius:14px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.dc:active{opacity:.8}
+.di{width:44px;height:44px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px}
+.dco{font-size:22px;font-weight:900;line-height:1}
+.lr{border-radius:12px;padding:11px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(37,99,235,0.06)}
+.lc{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a}
+.ln{background:var(--surface);border:1px solid var(--border)}
+/* DIR */
+#sw{padding:14px 16px 0;position:sticky;top:0;z-index:10;background:linear-gradient(to bottom,var(--bg) 85%,transparent);padding-bottom:4px}
+.sb{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;display:flex;align-items:center;padding:11px 14px;gap:8px;box-shadow:0 2px 8px rgba(37,99,235,0.07)}
+.sb input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:13px;font-family:inherit}
+.sb input::placeholder{color:var(--faint)}
+#cb{font-size:13px;color:var(--faint);cursor:pointer;display:none;padding:2px}
+.fr{display:flex;gap:6px;overflow-x:auto;padding:10px 16px 0;scrollbar-width:none}
+.fr::-webkit-scrollbar{display:none}
+.fb{flex-shrink:0;padding:7px 15px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);color:var(--dim);font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s;font-weight:500}
+.fa{border-color:var(--blue);background:var(--bd);color:var(--blue);font-weight:700}
+.fag{border-color:var(--green);background:var(--gd);color:var(--green);font-weight:700}
+.fap{border-color:var(--purple);background:var(--pd);color:var(--purple);font-weight:700}
+#rc{padding:8px 16px 2px;font-size:10px;color:var(--faint);font-weight:500}
+#ml{padding:0 16px}
+.mc{display:flex;align-items:center;gap:12px;cursor:pointer}
+.mc:active{background:#f0f4ff}
+.mc .mn{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.mc .mr2{font-size:11px;color:var(--dim);margin:2px 0}
+.mc .mp{font-size:10px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mc .mrt{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.ar{font-size:16px;color:var(--faint)}
+/* DETAIL */
+.bb2{background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:7px 16px;border-radius:20px;font-size:12px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px;font-weight:600;box-shadow:0 1px 4px rgba(37,99,235,0.08)}
+.dh{border-radius:20px;padding:22px 18px;margin-bottom:10px;position:relative;overflow:hidden}
+.pb3{background:rgba(255,255,255,.6);border-radius:12px;padding:12px 14px;border:1px solid rgba(255,255,255,.8)}
+.pb3 .pl{font-size:9px;margin-bottom:5px;letter-spacing:1px;font-weight:700;opacity:.7}
+.pb3 .pv{font-size:13px;font-weight:700;line-height:1.6}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.ct{display:flex;align-items:center;gap:10px;border-radius:14px;padding:13px 14px;text-decoration:none;border:none;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,0.07)}
+.ct.tel{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;color:#1d4ed8}
+.ct.mai{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;color:#15803d}
+.ct .ci{font-size:20px;flex-shrink:0}
+.ct .cl{font-size:11px;font-weight:700}
+.ct .cv{font-size:10px;opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb2{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:6px;box-shadow:0 1px 4px rgba(37,99,235,0.05)}
+.sh{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sd{font-size:10px;color:var(--faint);margin-bottom:8px;font-weight:500}
+.sc{display:flex;gap:6px}
+.sc a{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;border-radius:8px;padding:7px 6px;text-decoration:none;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.sc .st{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8}
+.sc .sm{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+/* RULES */
+.ch{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .15s;box-shadow:0 1px 4px rgba(37,99,235,0.05)}
+.ch.op{background:linear-gradient(135deg,#eff6ff,#dbeafe);border-color:#bfdbfe;border-radius:14px 14px 0 0}
+.ch .ct2{font-size:13px;font-weight:700;color:var(--text)}
+.ch.op .ct2{color:var(--blue)}
+.ca{font-size:16px;color:var(--faint);transition:transform .2s}
+.ch.op .ca{transform:rotate(90deg);color:var(--blue)}
+.cb2{background:#f8fbff;border:1px solid #bfdbfe;border-top:none;border-radius:0 0 14px 14px;padding:8px 12px 12px;display:none}
+.cb2.op{display:block}
+.art{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 12px;margin-top:6px;box-shadow:0 1px 3px rgba(37,99,235,0.04)}
+.an{font-size:10px;color:var(--blue);font-weight:700;flex-shrink:0}
+.at2{font-size:12px;font-weight:700;color:var(--text)}
+.ab{font-size:11px;color:var(--dim);line-height:1.78}
+.adb{background:linear-gradient(135deg,#faf5ff,#f3e8ff);border:1px solid #d8b4fe;border-radius:14px;padding:14px 16px;margin-top:8px}
+.adt{font-size:12px;font-weight:700;color:var(--purple);margin-bottom:10px}
+table.kt{width:100%;border-collapse:collapse;font-size:11px}
+table.kt th{text-align:left;padding:4px 8px;color:var(--faint);font-weight:700}
+table.kt td{padding:8px 8px;border-top:1px solid #e9d5ff;color:var(--dim)}
+table.kt td.mo{color:var(--purple);font-weight:700}
+.adn{font-size:9px;color:var(--faint);margin-top:8px;font-weight:500}
+.nr{text-align:center;padding:40px 0;color:var(--faint)}
+.nr .ni2{font-size:32px;margin-bottom:10px}
+.p16{padding:0 16px}
+.mt16{margin-top:16px}
+.mt12{margin-top:12px}
+.mb8{margin-bottom:8px}
+.f1{flex:1}
+.mw0{min-width:0}
+.fw7{font-weight:700}
+
+/* TOAST */
+#toast{position:fixed;bottom:calc(90px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:rgba(30,45,90,0.93);color:#fff;padding:10px 22px;border-radius:24px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:9999;white-space:nowrap;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.18)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#install-banner{display:none;position:fixed;bottom:calc(var(--nav) + env(safe-area-inset-bottom) + 10px);left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:440px;background:#fff;border:1.5px solid var(--bb);border-radius:16px;padding:12px 16px;z-index:500;box-shadow:0 4px 20px rgba(37,99,235,0.15);align-items:center;gap:12px}
+#install-banner.show{display:flex}
+.ib-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#1e40af,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;flex-shrink:0}
+.ib-text{flex:1}.ib-title{font-size:13px;font-weight:700;color:var(--text)}.ib-sub{font-size:11px;color:var(--dim);margin-top:2px}
+.ib-btn{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.ib-close{color:var(--faint);font-size:20px;cursor:pointer;padding:4px;flex-shrink:0;line-height:1}
+.ir.clickable{cursor:pointer}.ir.clickable:active{background:#f0f4ff}
+.lr.clickable{cursor:pointer}.lr.clickable:active{opacity:.8}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="logo">
+    <div class="li">S</div>
+    <div><div class="t1">SSP</div><div class="t2">SAMSUNG SDI PARTNERS</div></div>
+  </div>
+  <div class="badge">제12기 · '26~'28</div>
+</header>
+
+<div id="pages">
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+    <div class="hero">
+      <div class="hk">SAMSUNG SDI PARTNERS ASSOCIATION</div>
+      <div class="ht">제12기 SSP</div>
+      <div class="hs">2026년 3월 — 2028년 2월</div>
+      <div class="hst">
+        <div class="hsc"><div class="sv">50<span>개사</span></div><div class="sl">전체 회원사</div></div>
+        <div class="hsc"><div class="sv">3<span>개</span></div><div class="sl">분과</div></div>
+        <div class="hsc"><div class="sv">12<span>기</span></div><div class="sl">협의회 기수</div></div>
+      </div>
+    </div>
+    <div class="p16">
+      <div class="stitle">분과별 현황</div>
+      <div class="dc" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe" onclick="goDivDir('소재극판')">
+        <div class="di" style="background:#dbeafe;border:1.5px solid #93c5fd;color:#1d4ed8">⬡</div>
+        <div class="f1"><div class="fw7 mb8" style="font-size:14px;color:var(--text)">소재극판 분과</div><div style="font-size:10px;color:var(--dim);line-height:1.5">양극재·음극재·전해액·분리막·소재·설비</div></div>
+        <div style="text-align:right;flex-shrink:0"><div class="dco" style="color:#1d4ed8">21</div><div style="font-size:9px;color:var(--faint)">개사 ›</div></div>
+      </div>
+      <div class="dc" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0" onclick="goDivDir('셀조립')">
+        <div class="di" style="background:#dcfce7;border:1.5px solid #86efac;color:#15803d">⬢</div>
+        <div class="f1"><div class="fw7 mb8" style="font-size:14px;color:var(--text)">셀조립 분과</div><div style="font-size:10px;color:var(--dim);line-height:1.5">CAN·CAP Assy·조립설비·검사장비·용접</div></div>
+        <div style="text-align:right;flex-shrink:0"><div class="dco" style="color:#15803d">14</div><div style="font-size:9px;color:var(--faint)">개사 ›</div></div>
+      </div>
+      <div class="dc" style="background:linear-gradient(135deg,#faf5ff,#f3e8ff);border:1px solid #d8b4fe" onclick="goDivDir('모듈팩')">
+        <div class="di" style="background:#f3e8ff;border:1.5px solid #c4b5fd;color:#6d28d9">◆</div>
+        <div class="f1"><div class="fw7 mb8" style="font-size:14px;color:var(--text)">모듈팩 분과</div><div style="font-size:10px;color:var(--dim);line-height:1.5">BMS·Pack·Module·자동화설비·보호회로</div></div>
+        <div style="text-align:right;flex-shrink:0"><div class="dco" style="color:#6d28d9">15</div><div style="font-size:9px;color:var(--faint)">개사 ›</div></div>
+      </div>
+    </div>
+    <div class="p16 mt16">
+      <div class="stitle">회장단</div>
+      <div id="ll"></div>
+    </div>
+  </div>
+
+  <!-- DIRECTORY -->
+  <div class="page" id="page-dir">
+    <div id="sw">
+      <div class="sb">
+        <span style="font-size:15px;color:var(--faint)">🔍</span>
+        <input id="si" type="text" placeholder="회사명 · 대표명 · 제품 · 담당자 검색">
+        <span id="cb" onclick="clr()">✕</span>
+      </div>
+      <div class="fr">
+        <button class="fb fa" data-d="전체" onclick="setF(this,'전체')">전체 (50)</button>
+        <button class="fb" data-d="소재극판" onclick="setF(this,'소재극판')">소재극판 (21)</button>
+        <button class="fb" data-d="셀조립" onclick="setF(this,'셀조립')">셀조립 (14)</button>
+        <button class="fb" data-d="모듈팩" onclick="setF(this,'모듈팩')">모듈팩 (15)</button>
+      </div>
+      <div id="rc"></div>
+    </div>
+    <div id="ml"></div>
+  </div>
+
+  <!-- DETAIL -->
+  <div class="page" id="page-detail">
+    <div style="padding:16px 16px 0"><button class="bb2" onclick="backD()">‹ 목록</button></div>
+    <div id="dc2" style="padding:14px 16px 0"></div>
+  </div>
+
+  <!-- RULES -->
+  <div class="page" id="page-rules">
+    <div style="padding:16px">
+      <div style="font-size:20px;font-weight:900;margin-bottom:4px;color:var(--text)">SSP 회칙</div>
+      <div style="font-size:11px;color:var(--dim);margin-bottom:16px">총 7장 21조 · 제12기 적용</div>
+      <div id="ru"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="install-banner">
+  <div class="ib-icon">S</div>
+  <div class="ib-text">
+    <div class="ib-title">홈 화면에 추가</div>
+    <div class="ib-sub">앱처럼 바로 실행할 수 있어요</div>
+  </div>
+  <button class="ib-btn" onclick="doInstall()">추가</button>
+  <span class="ib-close" onclick="dismissInstall()">✕</span>
+</div>
+
+<!-- Floating install help button (always visible) -->
+<button id="install-fab" onclick="showInstallGuide()" style="position:fixed;bottom:calc(var(--nav) + env(safe-area-inset-bottom) + 14px);right:16px;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#1e40af,#3b82f6);border:none;color:#fff;font-size:20px;cursor:pointer;box-shadow:0 3px 12px rgba(37,99,235,0.35);z-index:400;display:flex;align-items:center;justify-content:center;line-height:1" title="홈 화면에 추가">＋</button>
+
+<nav>
+  <button class="nb on" id="nb-home" onclick="showT('home')"><span class="ni">⌂</span><span class="nl">홈</span></button>
+  <button class="nb" id="nb-dir" onclick="showT('dir')"><span class="ni">◫</span><span class="nl">회원사</span></button>
+  <button class="nb" id="nb-rules" onclick="showT('rules')"><span class="ni">≡</span><span class="nl">회칙</span></button>
+</nav>
+</div>
+
+<script>
+const M=[
+{v:"d",c:"재원산업(주)",n:"심재원",r:"분과장",t:"02-3775-1945",e:"shim@jaewon.co.kr",w:"www.jaewon.co.kr",p:"NMP, 선분산 슬러리",f:"1987년",a:"9월 25일",s:[{k:"SSP업무",n:"정성민",o:"이사",d:"전지소재 영업팀",t:"02-3775-1945",e:"smj@jaewon.co.kr"},{k:"SDI영업",n:"서재원",o:"차장",d:"전지소재 영업팀",t:"02-3775-1945",e:"jwseo@jaewon.co.kr"}]},
+{v:"d",c:"더블유씨피(주)",n:"김병현",t:"043-870-3300",e:"withyou@w-scope.com",w:"wcp.kr",p:"이차전지용 분리막",f:"2016년",a:"10월 26일",s:[{k:"SSP업무",n:"강진구",o:"차장",d:"영업팀",t:"043-240-8878",e:"jgk@w-scope.com"},{k:"SDI영업",n:"강진구",o:"차장",d:"영업팀",t:"043-240-8878",e:"jgk@w-scope.com"}]},
+{v:"d",c:"덕산약품공업(주)",n:"홍성택",t:"031-495-4055",e:"delangel@duksan.kr",w:"duksan.kr",p:"n-Hexane, Meta-Xylene, Cyclohexanone 등",f:"1970년",a:"5월 1일",s:[{k:"SSP업무",n:"임동준",o:"수석",d:"영업",t:"031-495-6886",e:"love@duksan.kr"},{k:"SDI영업",n:"이건희",o:"책임",d:"영업",t:"031-495-6886",e:"khle777@duksan.kr"}]},
+{v:"d",c:"동원시스템즈(주)",n:"정용욱",t:"02-589-6031",e:"andrewchung@dongwon.com",w:"dongwonsystems.com",p:"CAN, AL-FOIL, 코팅박",f:"1980년",a:"5월 31일",s:[{k:"SSP업무",n:"정경엽",o:"차장",d:"수주영업팀",t:"010-5586-8444",e:"ky.jung@dongwon.com"},{k:"SDI영업",n:"이상우",o:"과장",d:"양산영업팀",t:"02-589-3595",e:"tkddn86@dongwon.com"}]},
+{v:"d",c:"동화일렉트로라이트(주)",n:"김종훈",t:"041-732-1707",e:"johnkim@dongwha.com",w:"dongwhaelectrolyte.com",p:"이차전지용 전해액",f:"2009년",a:"8월 20일",s:[{k:"SSP업무",n:"임영신",o:"프로",d:"운영기획팀",t:"010-9283-7333",e:"ysim@dongwha.com"},{k:"SDI영업",n:"강영환",o:"팀장",d:"영업1팀",t:"010-4789-8043",e:"kyh3239@dongwha.com"}]},
+{v:"d",c:"디아이동일(주)",n:"박찬규",t:"02-2222-3345",e:"ckpark@dong-il.com",w:"dong-il.com",p:"AL 양극기재",f:"1989년",a:"9월 1일",s:[{k:"SSP업무",n:"최재승",o:"이사",d:"영업",t:"02-2222-3325",e:"jschoi@dong-il.com"},{k:"SDI영업",n:"김건배",o:"부장",d:"영업",t:"02-2222-3348",e:"kbkim@dong-il.com"}]},
+{v:"d",c:"롯데에너지머티리얼즈(주)",n:"정길수",r:"총무",t:"02-707-9642",e:"gschung@lotte.net",w:"lotteenergymaterials.com",p:"동박(음극기재)",f:"1987년",a:"3월 14일",s:[{k:"SSP업무",n:"채인혁",o:"수석",d:"영업2팀",t:"010-9964-1557",e:"inhyouk.chae@lotte.net"},{k:"SDI영업",n:"채인혁",o:"수석",d:"영업2팀",t:"010-9964-1557",e:"inhyouk.chae@lotte.net"}]},
+{v:"d",c:"롯데인프라셀(주)",n:"이승민",t:"02-801-8009",e:"lee-seungmin@lotte.net",w:"lotteinfracell.co.kr",p:"Aluminum Foil(양극기재)",f:"2024년",a:"4월 1일",s:[{k:"SSP업무",n:"김현수",o:"팀장",d:"영업팀",t:"010-9124-8524",e:"nike-kim@lotte.net"},{k:"SDI영업",n:"조승환",o:"리더",d:"영업팀",t:"010-2443-3877",e:"seunghwan.jo@lotte.net"}]},
+{v:"d",c:"마이크로웍스솔루션즈(주)",n:"신용선",t:"02-6313-6114",e:"yongsun.shin@m-wks.com",w:"sol.micro-works.kr",p:"실리콘 이형필름, 광학용 PET",f:"1973년",a:"10월 16일",s:[{k:"SSP업무",n:"박준범",o:"매니저",d:"이형소재마케팅팀",t:"010-9085-1076",e:"pakjb84@m-wks.com"},{k:"SDI영업",n:"박준범",o:"매니저",d:"이형소재마케팅팀",t:"010-9085-1076",e:"pakjb84@m-wks.com"}]},
+{v:"d",c:"성일하이텍(주)",n:"이강명",t:"063-466-9200",e:"ykmke@sungeelht.com",w:"sungeelht.com",p:"황산코발트, 황산니켈, 탄산리튬",f:"2000년",a:"3월 6일",s:[{k:"SSP업무",n:"김집성",o:"프로",d:"영업마케팅실",t:"010-7217-0107",e:"jip@sungeelht.com"},{k:"SDI영업",n:"임석준",o:"이사",d:"영업마케팅실",t:"010-2719-3745",e:"aaronlim@sungeelht.com"}]},
+{v:"d",c:"솔브레인(주)",n:"정현석",t:"031-710-7341",e:"hschung@soulbrain.co.kr",w:"soulbrain.co.kr",p:"전해액",f:"1986년",a:"5월 6일",s:[{k:"SSP업무",n:"소현정",o:"매니저",d:"상생협력팀",t:"031-788-8137",e:"wcooperation@soulbrain.co.kr"},{k:"SDI영업",n:"곽철",o:"팀장",d:"전지사업1팀",t:"010-3239-8929",e:"ckwak@soulbrain.co.kr"}]},
+{v:"d",c:"씨아이에스(주)",n:"김동진",t:"053-593-1552",e:"dong.jin.kim@cisro.co.kr",w:"cisro.co.kr",p:"이차전지 제조설비(Coater, Press, Slitter)",f:"2002년",a:"4월 15일",s:[{k:"SSP업무",n:"최은희",o:"과장",d:"영업1그룹",t:"010-8518-8796",e:"choi1205@cisro.co.kr"},{k:"SDI영업",n:"민정은",o:"주임",d:"영업1그룹",t:"010-6306-6786",e:"mbsj1999@cisro.co.kr"}]},
+{v:"d",c:"(주)에코프로비엠",n:"최문호",r:"부회장",t:"043-710-5544",e:"mhchoi@ecoprobm.com",w:"ecoprobm.com",p:"양극재(NCA)",f:"2016년",a:"5월 1일",s:[{k:"SSP업무",n:"윤준효",o:"책임",d:"영업팀",t:"043-713-5674",e:"junhyo0725@ecoprobm.com"},{k:"SDI영업",n:"이원빈",o:"책임",d:"영업팀",t:"043-713-5601",e:"wonbin.lee@ecoprobm.com"}]},
+{v:"d",c:"(주)엘앤에프",n:"허제홍",t:"053-580-0707",e:"jaehur76@landf.co.kr",w:"landf.co.kr",p:"양극활물질(NCM, LFP)",f:"2000년",a:"7월 27일",s:[{k:"SSP업무",n:"김충건",o:"전무",d:"CRM부문",t:"010-7747-7238",e:"chunggunk@landf.co.kr"},{k:"SDI영업",n:"유준민",o:"팀장",d:"영업2팀",t:"010-3827-9658",e:"yoojm@landf.co.kr"}]},
+{v:"d",c:"(주)이엔에프테크놀로지",n:"김경미",t:"031-881-8200",e:"kkyungmee@enftech.com",w:"enftech.com",p:"OLED용 재료",f:"2000년",a:"5월 1일",s:[{k:"SSP업무",n:"강경아",o:"사원",d:"사업지원팀",t:"031-881-8256",e:"kyeonga.kang@enftech.com"},{k:"SDI영업",n:"정산",o:"상무",d:"첨단재료영업",t:"031-881-8200",e:"jeongsan@enftech.com"}]},
+{v:"d",c:"(주)천보",n:"이상율",r:"회장",t:"043-842-2801",e:"cbcsrlee@chunbochem.com",w:"chunbochem.com",p:"SOH(HP, PCA 외)",f:"2007년",a:"10월 1일",s:[{k:"SSP업무",n:"최영길",o:"상무",d:"기획팀",t:"070-4865-2588",e:"young@chunbochem.com"},{k:"SDI영업",n:"이현지",o:"차장",d:"영업팀",t:"070-4865-2509",e:"lhj9452@chunbochem.com"}]},
+{v:"d",c:"(주)켐트로스",n:"이동훈",t:"031-491-0653",e:"hr@chemtros.com",w:"chemtros.com",p:"반도체 소재, OLED 소재",f:"2006년",a:"3월 7일",s:[{k:"SSP업무",n:"이창수",o:"부장",d:"반도체소재",t:"010-5728-4212",e:"yics@chemtros.com"},{k:"SDI영업",n:"정국성",o:"담당",d:"첨단소재",t:"010-3265-2636",e:"ksjoung@chemtros.com"}]},
+{v:"d",c:"코스모신소재(주)",n:"홍동환",t:"043-850-1606",e:"dhh@cosmoamt.com",w:"cosmoamt.com",p:"이차전지용 양극활물질",f:"1967년",a:"10월 28일",s:[{k:"SSP업무",n:"허준",o:"팀장",d:"전지재료영업팀",t:"043-850-1657",e:"junheo91@cosmoamt.com"},{k:"SDI영업",n:"김태현",o:"사원",d:"전지재료영업팀",t:"043-850-1654",e:"kth2300015@cosmoamt.com"}]},
+{v:"d",c:"(주)포스코퓨처엠",n:"윤태일",t:"054-290-0114",e:"290469@poscofuturem.com",w:"poscofuturem.com",p:"양극활물질/음극활물질",f:"1971년",a:"4월 1일",s:[{k:"SSP업무",n:"김승재",o:"대리",d:"KAM1",t:"02-3457-4522",e:"tmdwoab@poscofuturem.com"},{k:"SDI영업",n:"조대경",o:"팀장",d:"KAM1",t:"02-3457-4520",e:"chodk@poscofuturem.com"}]},
+{v:"d",c:"한국유미코아배터리머티리얼즈(유)",n:"김태균",t:"041-620-0226",e:"taekyun.kim@ap.umicore.com",w:"umicore.kr",p:"양극활물질",f:"1999년",a:"9월 2일",s:[{k:"SSP업무",n:"배주환",o:"차장",d:"영업관리",t:"041-620-0226",e:"joohwan.bae@ap.umicore.com"},{k:"SDI영업",n:"최혁진",o:"부장",d:"영업&마케팅",t:"010-8992-0516",e:"hj.choi@ap.umicore.com"}]},
+{v:"d",c:"한화모멘텀(주)",n:"홍순재",t:"031-789-1371",e:"cios.hong@hanwha.com",w:"hanwhamomentum.com",p:"극판 장비",f:"1953년",a:"10월 9일",s:[{k:"SSP업무",n:"김동현",o:"팀장",d:"공정장비사업부",t:"010-2434-0732",e:"mammoth@hanwha.com"},{k:"SDI영업",n:"김병우",o:"대리",d:"공정장비사업부",t:"010-6483-1373",e:"kbwgogo@hanwha.com"}]},
+{v:"g",c:"상신이디피(주)",n:"김민철",r:"분과장",t:"041-583-5027",e:"mckim@ssedp.co.kr",w:"ssedp.com",p:"원형CAN, 각형CAN, CID",f:"1985년",a:"5월 1일",s:[{k:"SSP업무",n:"한의제",o:"이사",d:"인사총무팀",t:"041-583-5027",e:"ejhan@ssedp.co.kr"},{k:"SDI영업",n:"이영호",o:"상무",d:"영업팀",t:"041-583-5027",e:"goodman@ssedp.co.kr"}]},
+{v:"g",c:"(주)고려이노테크",n:"허혁",t:"055-221-9604",e:"heoh@kinno.co.kr",w:"kinno.co.kr",p:"TAB, JR SHEET, INSULATING외",f:"2005년",a:"7월 1일",s:[{k:"SSP업무",n:"윤수열",o:"팀장",d:"경영지원팀",t:"070-5006-9803",e:"syyun@kinno.co.kr"},{k:"SDI영업",n:"진영진",o:"차장",d:"영업팀",t:"070-5006-9821",e:"jinz@kinno.co.kr"}]},
+{v:"g",c:"(주)넥스플러스",n:"이동호",t:"041-540-1705",e:"LDH218@nexplus.co.kr",w:"nexplus.co.kr",p:"Battery module",f:"2008년",a:"4월 16일",s:[{k:"SSP업무",n:"신준환",o:"이사",d:"개발영업본부",t:"010-3300-8408",e:"smanz@nexplus.co.kr"},{k:"SDI영업",n:"신준환",o:"이사",d:"개발영업본부",t:"010-3300-8408",e:"smanz@nexplus.co.kr"}]},
+{v:"g",c:"(주)비씨젠",n:"이기연",t:"031-371-3300",e:"rickylee@bcgen.co.kr",w:"bcgen.co.kr",p:"Cap Ass'y 및 구성 부품",f:"2021년",a:"6월 1일",s:[{k:"SSP업무",n:"최기주",o:"상무",d:"개발생산",t:"031-371-3381",e:"kjchoi@bcgen.co.kr"},{k:"SDI영업",n:"박상률",o:"대리",d:"영업팀",t:"031-371-3386",e:"srpark@bcgen.co.kr"}]},
+{v:"g",c:"(주)상아프론테크",n:"이상원",t:"032-451-7756",e:"swlee@sftc.co.kr",w:"sftc.co.kr",p:"소형&중대형 사출, PRESS부품 CAP ASSY",f:"1974년",a:"5월 1일",s:[{k:"SSP업무",n:"홍성엽",o:"책임",d:"SA2 영업팀",t:"032-451-7753",e:"hsy1544@sftc.co.kr"},{k:"SDI영업",n:"이경록",o:"책임",d:"SA2 영업팀",t:"032-451-7835",e:"leekyounglok@sftc.co.kr"}]},
+{v:"g",c:"신흥에스이씨(주)",n:"황만용",r:"부회장",t:"031-378-8141",e:"shsec@shsec.co.kr",w:"shsec.co.kr",p:"CAP ASS'Y / CAN",f:"1979년",a:"5월 16일",s:[{k:"SSP업무",n:"이경수",o:"이사",d:"인사팀",t:"010-8775-5950",e:"lks2501@shsec.co.kr"},{k:"SDI영업",n:"김중호",o:"상무",d:"소형마케팅부문",t:"010-7188-6328",e:"kjh9603@shsec.co.kr"}]},
+{v:"g",c:"(주)신흥정밀",n:"정유석",t:"031-678-1000",e:"yoosurk.jung@shc.co.kr",w:"shc.co.kr",p:"프레스, 사출, 금형",f:"1968년",a:"11월 1일",s:[{k:"SSP업무",n:"정상헌",o:"전무",d:"영업팀",t:"010-6202-1993",e:"sangheon.jeong@shc.co.kr"},{k:"SDI영업",n:"박수철",o:"상무",d:"영업팀",t:"010-3379-2246",e:"sc.park@shc.co.kr"}]},
+{v:"g",c:"(주)에스에프에이",n:"김상경",t:"031-379-7355",e:"rlatkdrud@sfa.co.kr",w:"sfa.co.kr",p:"STK, OHT, 공정설비",f:"1984년",a:"4월 15일",s:[{k:"SSP업무",n:"김종훈",o:"수석",d:"물류영업1팀",t:"010-3326-3291",e:"jonghoon.kim@sfa.co.kr"},{k:"SDI영업",n:"라기성",o:"팀장",d:"물류영업1팀",t:"010-6246-4892",e:"ksra@sfa.co.kr"}]},
+{v:"g",c:"(주)에이치비테크놀러지",n:"문성준",t:"044-417-6580",e:"sjmoon@hbtechnology.co.kr",w:"hbtechnology.co.kr",p:"외관검사기",f:"1997년",a:"9월 2일",s:[{k:"SSP업무",n:"선호",o:"사장",d:"COO",t:"044-417-6580",e:"sunho@hbtechnology.co.kr"},{k:"SDI영업",n:"최우정",o:"책임",d:"영업 1팀",t:"070-7933-0645",e:"wjchoi@hbtechnology.co.kr"}]},
+{v:"g",c:"(주)엔시스",n:"진승언",t:"041-568-7222",e:"sejin@n-sys.co.kr",w:"n-sys.co.kr",p:"2차전지 검사장비, 포메이션장비",f:"2006년",a:"1월 12일",s:[{k:"SSP업무",n:"박창현",o:"그룹장",d:"경영지원그룹",t:"010-8854-3586",e:"chpark@n-sys.co.kr"},{k:"SDI영업",n:"이정섭",o:"팀장",d:"비전기술영업2팀",t:"010-6290-0080",e:"jslee@n-sys.co.kr"}]},
+{v:"g",c:"(주)엠오티",n:"마점래",t:"055-374-6220",e:"mot@motfa.com",w:"motfa.com",p:"LPW용접",f:"2001년",a:"9월 22일",s:[{k:"SSP업무",n:"김충규",o:"부사장",d:"CMO/총괄",t:"055-374-6220",e:"kck0021@motfa.com"},{k:"SDI영업",n:"김충규",o:"부사장",d:"CMO/총괄",t:"055-374-6220",e:"kck0021@motfa.com"}]},
+{v:"g",c:"(주)이노메트리",n:"이갑수",t:"031-275-5174",e:"gslee@innometry.com",w:"innometry.com",p:"엑스레이검사장비",f:"2008년",a:"6월 3일",s:[{k:"SSP업무",n:"이성식",o:"실장",d:"기술영업팀",t:"010-2399-2920",e:"sungsik.lee@innometry.com"},{k:"SDI영업",n:"김은상",o:"수석",d:"기술영업팀",t:"010-8713-5204",e:"eunsang.kim@innometry.com"}]},
+{v:"g",c:"(주)제이이엔지",n:"정원태",t:"055-912-2270",e:"weontae@j-eng.co.kr",w:"j-eng.co.kr",p:"화성공정설비, 비젼외관검사포장설비",f:"2007년",a:"6월 1일",s:[{k:"SSP업무",n:"정지인",o:"부장",d:"경영관리팀",t:"055-375-1244",e:"jungji@j-eng.co.kr"},{k:"SDI영업",n:"김세교",o:"부사장",d:"총괄관리팀",t:"055-912-2281",e:"sjd1230@j-eng.co.kr"}]},
+{v:"g",c:"(주)코엠",n:"이존하",t:"02-462-9455",e:"koem@korea.com",w:"koem.com",p:"2차전지 자동권취기",f:"1987년",a:"1월 27일",s:[{k:"SSP업무",n:"김희은",o:"대리",d:"총무팀",t:"010-4202-5572",e:"hekim@koem.com"},{k:"SDI영업",n:"이존하",o:"부사장",d:"경영지원팀",t:"010-9038-3460",e:"jonha.lee@koem.com"}]},
+{v:"p",c:"(주)필에너지",n:"한기수",r:"분과장",t:"031-8036-9570",e:"philoptics@philoptics.com",w:"philenergy.co.kr",p:"노칭기, 스택설비, WINDER",f:"2020년",a:"4월 1일",s:[{k:"SSP업무",n:"이종수",o:"수석",d:"영업팀",t:"031-789-9029",e:"jj5787@philenergy.co.kr"},{k:"SDI영업",n:"이상조",o:"수석",d:"영업팀",t:"010-8721-6666",e:"lsj@philenergy.co.kr"}]},
+{v:"p",c:"넥스콘테크놀러지(주)",n:"허광재",t:"041-620-4000",e:"gjheo@nexcontech.com",w:"nexcontech.com",p:"PCM / PCA / TOOL / BMS / BCU",f:"1996년",a:"10월 9일",s:[{k:"SSP업무",n:"배지원",o:"매니저",d:"총무파트",t:"041-620-4019",e:"jw.bae@nexcontech.com"},{k:"SDI영업",n:"김동욱",o:"책임",d:"영업본부",t:"010-4042-8877",e:"dw.kim@nexcontech.com"}]},
+{v:"p",c:"(주)디케이티",n:"이지열",t:"070-4324-3281",e:"sdjulio010@dkttech.kr",w:"dkttech.co.kr",p:"BMS, PCM, SPCM",f:"2012년",a:"5월 1일",s:[{k:"SSP업무",n:"이우성",o:"책임",d:"마케팅팀",t:"070-4324-3562",e:"useong77@dkttech.co.kr"},{k:"SDI영업",n:"이우성",o:"책임",d:"마케팅팀",t:"070-4324-3562",e:"useong77@dkttech.co.kr"}]},
+{v:"p",c:"(주)베스텍",n:"이복선",t:"031-8003-0206",e:"bestec_1st@daum.net",w:"bestec.co.kr",p:"EV전해액주액설비&모듈라인",f:"2001년",a:"3월 27일",s:[{k:"SSP업무",n:"한점호",o:"팀장",d:"관리팀",t:"010-2248-6989",e:"bt_2nd@bestec.co.kr"},{k:"SDI영업",n:"이승범",o:"상무",d:"영업팀",t:"010-3658-7363",e:"seunglee@bestec.co.kr"}]},
+{v:"p",c:"(주)보백씨엔에스",n:"서동조",t:"054-465-9111",e:"sdj21y@bokcns.com",w:"bokcns.com",p:"CTA, Ins-Cell, Ins-BTM, Ins-Side",f:"2012년",a:"3월 30일",s:[{k:"SSP업무",n:"박충원",o:"상무",d:"개발본부",t:"070-4914-9146",e:"cwpark@bokcns.com"},{k:"SDI영업",n:"박충원",o:"상무",d:"개발본부",t:"070-4914-9146",e:"cwpark@bokcns.com"}]},
+{v:"p",c:"삼성기전(주)",n:"정대림",t:"031-366-4588",e:"ceo@samsung-mecha.com",w:"faworld.net",p:"HVC라인 전/후면 물류, 주액기 HVC 히팅트레이",f:"1988년",a:"2월 1일",s:[{k:"SSP업무",n:"박경희",o:"팀장",d:"경영지원팀",t:"010-9006-7206",e:"kh.park@samsung-mecha.com"},{k:"SDI영업",n:"김태규",o:"상무",d:"울산사업장",t:"010-9901-4254",e:"tk.kim@samsung-mecha.com"}]},
+{v:"p",c:"(주)삼진엘앤디",n:"이명종",t:"031-379-2111",e:"mjlee@samjin.co.kr",w:"samjin.co.kr",p:"ESS, UPS MODULE 부품",f:"1987년",a:"4월 1일",s:[{k:"SSP업무",n:"이재원",o:"프로",d:"영업팀",t:"010-4538-5907",e:"jwlee@samjin.co.kr"},{k:"SDI영업",n:"한지은",o:"프로",d:"영업팀",t:"010-4643-6342",e:"jehan@samjin.co.kr"}]},
+{v:"p",c:"(주)서진시스템",n:"전동규",t:"032-221-3022",e:"Jon04@seojinsys.co.kr",w:"seojinsystem.net",p:"ESS, 자동차(EV 배터리팩, 모듈)",f:"1996년",a:"7월 15일",s:[{k:"SSP업무",n:"박예원",o:"대리",d:"경영지원",t:"032-221-5811",e:"ywpark@seojinsys.co.kr"},{k:"SDI영업",n:"박상선",o:"부장",d:"영업",t:"032-221-3022",e:"pss3196@seojinsys.co.kr"}]},
+{v:"p",c:"신형에프에이(주)",n:"신희화",t:"031-8015-4915",e:"lovesinhh@daum.net",w:"shinhyung.com",p:"자동화 설비(팩/모듈설비)",f:"2012년",a:"5월 2일",s:[{k:"SSP업무",n:"곽채훈",o:"프로",d:"지원팀",t:"010-9146-6954",e:"ch@shinhyung.com"},{k:"SDI영업",n:"곽채훈",o:"프로",d:"지원팀",t:"010-9146-6954",e:"ch@shinhyung.com"}]},
+{v:"p",c:"(주)아이티엠반도체",n:"정대규",t:"043-270-6820",e:"jdk63@it-m.co.kr",w:"it-m.co.kr",p:"보호회로, 보호회로 소자(PMP, POC)",f:"2000년",a:"2월 23일",s:[{k:"SSP업무",n:"박용호",o:"부장",d:"영업본부",t:"010-6348-1955",e:"zombi1090@it-m.co.kr"},{k:"SDI영업",n:"정회원",o:"상무",d:"영업본부",t:"010-2803-2012",e:"jhw@it-m.co.kr"}]},
+{v:"p",c:"(주)원익피앤이",n:"이기채",t:"031-291-9191",e:"lkc0537@wonik.com",w:"wonikpne.com",p:"CYCLER, FORMATION 설비",f:"2004년",a:"4월 1일",s:[{k:"SSP업무",n:"윤춘하",o:"상무",d:"영업팀",t:"010-3213-5491",e:"yyytc@wonik.com"},{k:"SDI영업",n:"최정규",o:"부장",d:"영업팀",t:"010-9444-3141",e:"schoi@wonik.com"}]},
+{v:"p",c:"(주)티엠프라자",n:"박명곤",t:"070-8228-6555",e:"pmk8852@naver.com",w:"tmplaza.co.kr",p:"HVC, 충방전기, IR OCV",f:"2006년",a:"10월 20일",s:[{k:"SSP업무",n:"신승훈",o:"상무",d:"공정팀",t:"010-2418-9823",e:"shshin@tmplaza.co.kr"},{k:"SDI영업",n:"신승훈",o:"상무",d:"공정팀",t:"010-2418-9823",e:"shshin@tmplaza.co.kr"}]},
+{v:"p",c:"(주)파워로직스",n:"김윤회",t:"043-219-5820",e:"yhkim@powerlogics.kr",w:"powerlogics.co.kr",p:"PCM, SM, N.APP, ESS, EV BMS등",f:"1973년",a:"8월 19일",s:[{k:"SSP업무",n:"이연근",o:"팀장",d:"영업",t:"043-219-5652",e:"lyk88@powerlogics.kr"},{k:"SDI영업",n:"차정훈",o:"책임",d:"영업",t:"043-219-5602",e:"jounghun9@powerlogics.kr"}]},
+{v:"p",c:"(주)파인엠텍",n:"홍성천",t:"031-463-8801",e:"hongsc@finemtec.com",w:"finemtec.com",p:"EPA(Endplate Assy)",f:"2022년",a:"4월 1일",s:[{k:"SSP업무",n:"황재영",o:"책임",d:"MC기술영업팀",t:"010-5025-3691",e:"hwangjy1208@finemtec.com"},{k:"SDI영업",n:"황재영",o:"책임",d:"MC기술영업팀",t:"010-5025-3691",e:"hwangjy1208@finemtec.com"}]},
+{v:"p",c:"(주)한중엔시에스",n:"김환식",r:"감사",t:"054-337-5050",e:"ceokims@hjncs.com",w:"hjncs.com",p:"ESS 냉각시스템 부품, 칠러 & HVAC",f:"1995년",a:"8월 31일",s:[{k:"SSP업무",n:"정찬수",o:"책임",d:"인사실",t:"054-339-5132",e:"chance@hjncs.com"},{k:"SDI영업",n:"오만열",o:"이사",d:"영업1팀",t:"010-2715-3197",e:"mandu5@hjncs.com"}]},
+];
+
+const DIVC={
+  d:{ac:"#1d4ed8",dm:"#eff6ff",br:"#bfdbfe",cl:"ds",nm:"소재극판",
+     dhbg:"linear-gradient(135deg,#1e40af,#2563eb)",dhaft:"rgba(255,255,255,0.15)"},
+  g:{ac:"#15803d",dm:"#f0fdf4",br:"#bbf7d0",cl:"gs",nm:"셀조립",
+     dhbg:"linear-gradient(135deg,#065f46,#059669)",dhaft:"rgba(255,255,255,0.15)"},
+  p:{ac:"#6d28d9",dm:"#faf5ff",br:"#d8b4fe",cl:"ms",nm:"모듈팩",
+     dhbg:"linear-gradient(135deg,#4c1d95,#7c3aed)",dhaft:"rgba(255,255,255,0.15)"},
+};
+const L=[
+  {r:"회장",bc:"pg",c:"(주)천보",n:"이상율",t:"043-842-2801",ch:true},
+  {r:"부회장",bc:"ps",c:"신흥에스이씨(주)",n:"황만용",t:"031-378-8141"},
+  {r:"부회장",bc:"ps",c:"(주)에코프로비엠",n:"최문호",t:"043-710-5544"},
+  {r:"총무",bc:"pb2",c:"롯데에너지머티리얼즈(주)",n:"정길수",t:"02-707-9642"},
+  {r:"감사",bc:"pr",c:"(주)한중엔시에스",n:"김환식",t:"054-337-5050"},
+  {r:"소재극판 분과장",bc:"pt",c:"재원산업(주)",n:"심재원",t:"02-3775-1945"},
+  {r:"셀조립 분과장",bc:"pt",c:"상신이디피(주)",n:"김민철",t:"041-583-5027"},
+  {r:"모듈팩 분과장",bc:"pt",c:"(주)필에너지",n:"한기수",t:"031-8036-9570"},
+];
+const CHAPS=[
+  {t:"제1장 총칙",arts:[
+    {no:"제1조",t:"명칭",b:'본회는 "삼성SDI(주) 파트너사 협의회"(이하 "SSP")라 칭한다.'},
+    {no:"제2조",t:"구성",b:"본회는 삼성SDI(주)에 원부자재 및 설비 등을 공급하고 있는 파트너사로 구성되며 업종별 또는 사업부별 운영위원회를 구성할 수 있다."},
+    {no:"제3조",t:"목적",b:"본회는 삼성SDI와 본 회간의 원활한 협력관계를 유지하고 상호간 동반성장을 추구하며 공존공영의 정신으로 상호 이익을 증진하고 우호 친선과 건전한 발전에 협력 함을 목적으로 한다."},
+    {no:"제4조",t:"운영",b:"본회는 삼성SDI와의 대등한 위치에서 상호존중과 신의, 성실의 기본원칙 하에 자치적으로 운영한다."},
+    {no:"제5조",t:"사무국",b:"본회는 사무국을 삼성SDI 내에 설치 할 수 있다."},
+  ]},
+  {t:"제2장 조직",arts:[
+    {no:"제6조",t:"임원",b:"회장 1인, 부회장 2인 이내, 감사 2인 이내, 총무 2인 이내, 분과위원장 분과별 1인을 두며 본회의 발전을 위해 고문 및 자문위원을 둘 수 있다. 임원진을 가칭 '회장단'이라 칭한다."},
+    {no:"제7조",t:"임원의 선출·임기·역할",b:"임원의 임기는 2년으로 하며 연임할 수 있다. 회장은 본회를 대표하며 정기총회 및 임시총회를 주관한다. 부회장은 회장을 보좌하고 SSP 활성화를 도모한다. 감사는 회비 및 제경비를 관리·감사하여 회계보고를 행한다."},
+    {no:"제8조",t:"회원사의 자격 및 가입",b:"본회의 회원은 삼성SDI와의 원활한 협력관계를 유지하며 거래관계에 있어서 모범이 되는 파트너사로서 삼성SDI의 가입 추천을 받아 심의를 거쳐 총회의 승인을 받아야 한다. 해당하는 외국기업의 국내법인(지사)도 포함할 수 있다."},
+    {no:"제9조",t:"자격의 정지",b:"삼성SDI와의 거래가 중단된 경우, 본회의 명예를 훼손한 경우, 도산으로 대표자·상호가 변경된 경우, 정당한 사유 없이 회의 불참 및 회비를 체납하는 경우, SSP 활동이 불성실한 회원사는 총회의 의결을 통해 자격을 박탈할 수 있다."},
+  ]},
+  {t:"제3장 회의",arts:[
+    {no:"제10조",t:"총회",b:"정기총회는 년 1회로 하며 매년 3월 이내 개최한다. 임시총회는 회장단에서 필요하다고 인정하거나 총 회원의 3분의 1 이상의 동의를 얻어 소집할 수 있다."},
+    {no:"제11조",t:"분과위원회",b:"분과위원회는 각 분과 위원회별로 년 2회 이상 개최하고 필요 시 분과위원장 주관 하에 임시회의를 개최할 수 있다."},
+    {no:"제12조",t:"회의",b:"회의는 회원의 과반수이상 참석으로 성립하고 의결은 참석회원 과반수 이상 찬성으로 가결됨을 원칙으로 하며 가부동수인 경우 회장에게 결정권이 있다. 회의는 7일 전에 일시·장소·안건을 문서로 통보한다."},
+    {no:"제13조",t:"회칙의 제정 및 개폐",b:"회칙의 제정 및 개정은 총회에 부의하여 승인을 득하여야 한다."},
+    {no:"제14조",t:"의사록 작성",b:"총회의 의사에 관하여는 의사의 경과와 결의사항을 기재하고 의장과 총회에서 지명하는 회원 2인 이상이 서명 날인하여야 한다."},
+  ]},
+  {t:"제4장 활동",arts:[
+    {no:"제15조",t:"활동",b:"모델 공장 선정을 통한 지도향상 활동, 우수 회원사 표창 활동, 경영자·관리자 교육 및 각종 연수회 활동, 품질·생산성향상 혁신우수사례 공유 및 벤치마킹, 회원사 부품수출 및 개발 활동, 삼성SDI와 회원사간 분쟁의 자율적인 조정 등을 운영할 수 있다."},
+    {no:"제16조",t:"금지사항",b:"회원사는 본회 운영상 알게 된 SSP회원사 및 삼성SDI의 회사 기밀을 일체 누설해서는 안되며, 납품 거부·가격담합 등 직접적인 구매 업무 행위 및 담합의 장소로 이용해서는 안된다."},
+  ]},
+  {t:"제5장 회계",arts:[
+    {no:"제17조",t:"회계년도",b:"본회의 회계년도는 SSP총회를 기준일로 하며 회계 보고는 익년 총회에서 당해 년도의 감사가 행한다."},
+    {no:"제18조",t:"회비",b:"정기회비는 회계연도 예산을 고려하여 임원회에서 금액을 산정하여 총회에서 확정한다. 정기 회비는 당해 년도 정기총회 일자로부터 1개월 이내에 일괄 납부해야 하며, 미납 시 탈퇴 의사로 간주하여 자격을 정지시킬 수 있다. 가입비·회비 잔여금은 어떠한 경우에도 반환하지 않는다."},
+  ]},
+  {t:"제6장 보고 및 신고",arts:[
+    {no:"제19조",t:"보고의무",b:"본회는 회원에 대하여 필요한 보고를 요구할 수 있고 회원은 이를 준수할 의무를 가진다."},
+  ]},
+  {t:"제7장 해산과 청산",arts:[
+    {no:"제20조",t:"해산",b:"본회는 총회에서의 해산 결의 또는 기타 해산사유의 발생 시 해산한다."},
+    {no:"제21조",t:"청산인",b:"본회가 해산할 때 회장이 청산인이 된다. 단, 총회의 결의에 의하여 회원 중에서 이를 선출할 수 있다."},
+  ]},
+];
+
+function ini(s){return s.replace(/\(주\)|\(유\)/g,'').trim().slice(0,2);}
+function rPill(r){const m={회장:'pg',부회장:'ps',총무:'pb2',감사:'pr',분과장:'pt'};return r&&m[r]?`<span class="pill ${m[r]}">${r}</span>`:'';}
+function dPill(v){const c=DIVC[v];return `<span class="pill ${c.cl}">${c.nm}</span>`;}
+
+// Leaders
+function renderLeaders(){
+  document.getElementById('ll').innerHTML=L.map(function(l){
+    var idx=M.findIndex(function(m){return m.c===l.c;});
+    var hasPage=idx>=0;
+    var avStyle=l.ch?'background:#fef3c7;border:1.5px solid #fde68a;color:#d97706':'background:#eff6ff;border:1.5px solid #bfdbfe;color:#1d4ed8';
+    var cls='lr '+(l.ch?'lc':'ln')+(hasPage?' clickable':'');
+    var onclick=hasPage?(' onclick="showDet('+idx+')"'):'';
+    return '<div class="'+cls+'" style="gap:12px"'+onclick+'>'
+      +'<div class="av av-s" style="'+avStyle+'">'+ini(l.c)+'</div>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)">'+l.c+'</div>'
+        +'<div style="font-size:11px;color:var(--dim);margin-top:1px">'+l.n+'</div>'
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">'
+        +'<span class="pill '+l.bc+'">'+l.r+'</span>'
+        +'<span onclick="event.stopPropagation();callNum(\''+l.t+'\')" style="font-size:10px;color:var(--blue);cursor:pointer;text-decoration:underline;text-underline-offset:2px">'+l.t+'</span>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+renderLeaders();
+
+// Rules
+document.getElementById('ru').innerHTML=CHAPS.map((ch,ci)=>`
+  <div style="margin-bottom:8px">
+    <div class="ch" id="ch${ci}" onclick="tgCh(${ci})">
+      <div class="ct2">${ch.t}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:10px;color:var(--faint);font-weight:600">${ch.arts.length}조</span>
+        <span class="ca">›</span>
+      </div>
+    </div>
+    <div class="cb2" id="cb${ci}">
+      ${ch.arts.map(a=>`<div class="art"><div style="display:flex;gap:8px;align-items:baseline;margin-bottom:5px"><span class="an">${a.no}</span><span class="at2">${a.t}</span></div><div class="ab">${a.b}</div></div>`).join('')}
+    </div>
+  </div>`).join('')+`
+<div class="adb">
+  <div class="adt">📎 부칙 — 경조사비 기준</div>
+  <table class="kt">
+    <thead><tr><th>구분</th><th>화환/조화</th><th>조의/축하금</th></tr></thead>
+    <tbody>
+      <tr><td>조의 — 본인/배우자</td><td>조화(10만원)</td><td class="mo">100만원</td></tr>
+      <tr><td>조의 — 부모(본인/배우자)</td><td>조화(10만원)</td><td class="mo">100만원</td></tr>
+      <tr><td>결혼 — 자녀</td><td>화환(10만원)</td><td class="mo">100만원</td></tr>
+    </tbody>
+  </table>
+  <div class="adn">※ SSP에 등록된 대표자 기준</div>
+</div>`;
+
+function tgCh(ci){document.getElementById('ch'+ci).classList.toggle('op');document.getElementById('cb'+ci).classList.toggle('op');}
+
+let curF='전체',curQ='';
+function renderList(){
+  const q=curQ.toLowerCase();
+  const list=M.filter(m=>{
+    const dOk=curF==='전체'||(curF==='소재극판'&&m.v==='d')||(curF==='셀조립'&&m.v==='g')||(curF==='모듈팩'&&m.v==='p');
+    const qOk=!q||[m.c,m.n,m.p,...(m.s||[]).map(s=>s.n)].some(x=>x.toLowerCase().includes(q));
+    return dOk&&qOk;
+  });
+  document.getElementById('rc').textContent=list.length+'개사 표시';
+  const el=document.getElementById('ml');
+  if(!list.length){el.innerHTML='<div class="nr"><div class="ni2">🔍</div><div>검색 결과가 없습니다</div></div>';return;}
+  el.innerHTML=list.map(m=>{
+    const c=DIVC[m.v];
+    return `<div class="card mc" onclick="showDet(${M.indexOf(m)})">
+      <div class="av av-m" style="background:${c.dm};border:1.5px solid ${c.br};color:${c.ac}">${ini(m.c)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="mn">${m.c} ${rPill(m.r)}</div>
+        <div class="mr2">${m.n} 대표</div>
+        <div class="mp">${m.p}</div>
+      </div>
+      <div class="mrt">${dPill(m.v)}<span class="ar">›</span></div>
+    </div>`;
+  }).join('');
+}
+
+function setF(btn,div){
+  curF=div;
+  document.querySelectorAll('.fb').forEach(b=>{b.className='fb';});
+  btn.className='fb '+(div==='전체'?'fa':div==='소재극판'?'fa':div==='셀조립'?'fag':'fap');
+  renderList();
+}
+
+function clr(){document.getElementById('si').value='';curQ='';document.getElementById('cb').style.display='none';renderList();}
+document.getElementById('si').addEventListener('input',function(){curQ=this.value;document.getElementById('cb').style.display=this.value?'block':'none';renderList();});
+
+function showDet(idx){
+  var m=M[idx];
+  var c=DIVC[m.v];
+  var roleBadge=m.r?('<span style="background:rgba(255,255,255,.25);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px">'+m.r+'</span>'):'';
+  var staffHtml='';
+  if(m.s&&m.s.length){
+    staffHtml='<div style="margin-top:12px"><div class="stitle">업무담당자</div>';
+    m.s.forEach(function(s){
+      staffHtml+='<div class="sb2">'
+        +'<div class="sh"><span class="pill '+c.cl+'">'+s.k+'</span>'
+        +'<span style="font-size:13px;font-weight:700;color:var(--text)">'+s.n+'</span>'
+        +'<span style="font-size:11px;color:var(--dim)">'+s.o+'</span></div>'
+        +'<div class="sd">'+s.d+'</div>'
+        +'<div class="sc">'
+        +'<div class="st" onclick="callNum(\''+s.t+'\')" style="cursor:pointer">📞 '+s.t+'</div>'
+        +'<div class="sm" onclick="sendMail(\''+s.e+'\')" style="cursor:pointer">✉️ '+s.e+'</div>'
+        +'</div></div>';
+    });
+    staffHtml+='</div>';
+  }
+  document.getElementById('dc2').innerHTML=
+    '<div class="dh" style="background:'+c.dhbg+';position:relative;overflow:hidden">'
+    +'<div style="position:absolute;right:-40px;top:-40px;width:160px;height:160px;background:'+c.dhaft+';border-radius:50%;pointer-events:none"></div>'
+    +'<div style="position:absolute;left:-30px;bottom:-30px;width:120px;height:120px;background:rgba(255,255,255,.08);border-radius:50%;pointer-events:none"></div>'
+    +'<div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:16px">'
+      +'<div class="av av-l" style="background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.4);color:#fff;font-size:18px">'+ini(m.c)+'</div>'
+      +'<div style="flex:1">'
+        +'<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px">'
+          +'<span style="background:rgba(255,255,255,.2);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px">'+c.nm+' 분과</span>'
+          +roleBadge
+        +'</div>'
+        +'<div style="font-size:17px;font-weight:900;line-height:1.25;margin-bottom:4px;color:#fff">'+m.c+'</div>'
+        +'<div style="font-size:13px;color:rgba(255,255,255,.75)">대표 '+m.n+'</div>'
+      +'</div>'
+    +'</div>'
+    +'<div class="pb3"><div class="pl" style="color:rgba(255,255,255,.7)">삼성SDI 주거래 품목</div><div class="pv" style="color:#fff">'+m.p+'</div></div>'
+    +'</div>'
+    +'<div class="cg">'
+      +'<div class="ct tel" onclick="callNum(\''+m.t+'\')" style="cursor:pointer"><span class="ci">📞</span><div style="min-width:0"><div class="cl">전화 연결</div><div class="cv">'+m.t+'</div></div></div>'
+      +'<div class="ct mai" onclick="sendMail(\''+m.e+'\')" style="cursor:pointer"><span class="ci">✉️</span><div style="min-width:0"><div class="cl">이메일</div><div class="cv">'+m.e+'</div></div></div>'
+    +'</div>'
+    +'<div class="ir" onclick="openWeb(\''+m.w+'\')" style="cursor:pointer"><span class="ico">🌐</span><div><div class="lbl" style="color:var(--blue)">웹사이트 (탭하여 열기)</div><div class="val" style="color:var(--blue);text-decoration:underline;text-underline-offset:2px">'+m.w+'</div></div></div>'
+    +'<div class="ir"><span class="ico">📅</span><div><div class="lbl">설립년도</div><div class="val">'+m.f+'</div></div></div>'
+    +'<div class="ir"><span class="ico">🎂</span><div><div class="lbl">창립기념일</div><div class="val">'+m.a+'</div></div></div>'
+    +staffHtml;
+  // scroll detail page to top
+  var dp=document.getElementById('page-detail');
+  if(dp) dp.scrollTop=0;
+  showP('detail');
+}
+
+function backD(){showP('dir');}
+
+function showP(p){
+  document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  const nb=document.getElementById(p==='detail'?'nb-dir':'nb-'+p);
+  if(nb)nb.classList.add('on');
+}
+
+function showT(t){showP(t);if(t==='dir')renderList();}
+
+function goDivDir(div){
+  curF=div;curQ='';
+  document.getElementById('si').value='';
+  document.getElementById('cb').style.display='none';
+  document.querySelectorAll('.fb').forEach(b=>{b.className='fb';if(b.dataset.d===div)b.className='fb '+(div==='소재극판'?'fa':div==='셀조립'?'fag':'fap');});
+  renderList();
+  showP('dir');
+  document.getElementById('nb-dir').classList.add('on');
+}
+
+// ── TOAST ──
+function showToast(msg,dur){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},dur||2200);
+}
+
+// ── CALL / MAIL ──
+function callNum(tel){
+  try{window.location.href='tel:'+tel;}catch(e){}
+  navigator.clipboard&&navigator.clipboard.writeText(tel).then(()=>showToast('📋 '+tel+' 복사됨')).catch(()=>showToast('📞 '+tel));
+}
+function sendMail(email){
+  try{window.location.href='mailto:'+email;}catch(e){}
+  navigator.clipboard&&navigator.clipboard.writeText(email).then(()=>showToast('📋 '+email+' 복사됨')).catch(()=>showToast('✉️ '+email));
+}
+
+// ── WEBSITE ──
+function openWeb(url){
+  var clean=url.replace(/^https?:\/\//,'');
+  var http='http://'+clean;
+  var https='https://'+clean;
+  var modal=document.getElementById('web-modal');
+  document.getElementById('wm-url').textContent=url;
+  // 열기 버튼: http 우선 시도
+  document.getElementById('wm-http').onclick=function(){
+    try{window.open(http,'_blank');}catch(e){
+      try{window.open(https,'_blank');}catch(e2){
+        showToast('브라우저 주소창에 직접 입력해 주세요',3000);
+      }
+    }
+    closeWebModal();
+  };
+  // 복사 버튼: http URL 복사
+  document.getElementById('wm-copy').onclick=function(){
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(http)
+        .then(function(){showToast('📋 복사됨 — 브라우저 주소창에 붙여넣기 하세요',3000);closeWebModal();})
+        .catch(function(){showToast('📋 '+http,3000);closeWebModal();});
+    } else {
+      showToast('📋 '+http,3000);closeWebModal();
+    }
+  };
+  modal.style.display='flex';
+}
+function closeWebModal(){document.getElementById('web-modal').style.display='none';}
+
+// ── DYNAMIC VIEWPORT HEIGHT ──
+function setVH(){
+  var vh=window.innerHeight*0.01;
+  document.documentElement.style.setProperty('--vh',''+vh+'px');
+  document.getElementById('app').style.height=window.innerHeight+'px';
+}
+setVH();
+window.addEventListener('resize',setVH);
+window.addEventListener('orientationchange',function(){setTimeout(setVH,200);});
+
+// ── PWA INSTALL ──
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault(); deferredPrompt=e;
+  document.getElementById('install-banner').classList.add('show');
+});
+window.addEventListener('appinstalled',()=>{
+  document.getElementById('install-banner').classList.remove('show');
+  showToast('✅ 홈 화면에 추가되었습니다');
+});
+function doInstall(){
+  if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;document.getElementById('install-banner').classList.remove('show');});}
+  else{showToast('브라우저 메뉴 → "홈 화면에 추가" 를 선택하세요',3500);}
+}
+function dismissInstall(){document.getElementById('install-banner').classList.remove('show');}
+function showInstallGuide(){
+  if(deferredPrompt){doInstall();}
+  else{document.getElementById('ios-guide').style.display='flex';}
+}
+
+// ── PWA MANIFEST (dynamic) ──
+(function(){
+  const icons=[{src:"data:image/svg+xml;base64,"+btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="40" fill="#2563eb"/><text x="96" y="130" font-size="110" font-weight="900" font-family="Arial" fill="white" text-anchor="middle">S</text></svg>'),sizes:"192x192",type:"image/svg+xml"}];
+  const m={name:"제12기 SSP 수첩",short_name:"SSP 수첩",start_url:"./",display:"standalone",background_color:"#f0f4ff",theme_color:"#2563eb",icons};
+  const blob=new Blob([JSON.stringify(m)],{type:'application/json'});
+  document.getElementById('pwa-manifest').href=URL.createObjectURL(blob);
+})();
+
+
+renderList();
+</script>
+
+<!-- Web Modal -->
+<div id="web-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9998;align-items:flex-end;justify-content:center" onclick="if(event.target===this)closeWebModal()">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;box-shadow:0 -4px 24px rgba(0,0,0,0.15)">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">홈페이지 열기</div>
+    <div id="wm-url" style="font-size:12px;color:var(--dim);margin-bottom:20px;word-break:break-all"></div>
+    <button id="wm-http" style="width:100%;background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">🌐 홈페이지 열기</button>
+    <button id="wm-copy" style="width:100%;background:#f8faff;color:var(--blue);border:1px solid var(--bb);border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:16px">📋 URL 복사</button>
+    <button onclick="closeWebModal()" style="width:100%;background:transparent;color:var(--faint);border:none;padding:8px;font-size:13px;cursor:pointer;font-family:inherit">취소</button>
+  </div>
+</div>
+
+<!-- iOS Install Guide -->
+<div id="ios-guide" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;align-items:flex-end;justify-content:center" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:480px">
+    <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:16px;text-align:center">📱 홈 화면에 추가하기</div>
+    <div style="background:#f8faff;border-radius:12px;padding:14px 16px;margin-bottom:8px;border:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:6px">🍎 아이폰 (Safari)</div>
+      <div style="font-size:12px;color:var(--dim);line-height:1.7">하단 <b>공유 버튼(□↑)</b> 탭 → <b>"홈 화면에 추가"</b> 선택</div>
+    </div>
+    <div style="background:#f8faff;border-radius:12px;padding:14px 16px;margin-bottom:8px;border:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:6px">🤖 안드로이드 (크롬)</div>
+      <div style="font-size:12px;color:var(--dim);line-height:1.7">우측 상단 <b>메뉴(⋮)</b> 탭 → <b>"홈 화면에 추가"</b> 선택</div>
+    </div>
+    <div style="background:#f8faff;border-radius:12px;padding:14px 16px;margin-bottom:20px;border:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;color:var(--purple);margin-bottom:6px">🤖 안드로이드 (삼성 인터넷)</div>
+      <div style="font-size:12px;color:var(--dim);line-height:1.7">하단 <b>메뉴(≡)</b> 탭 → <b>"페이지 추가"</b> → <b>"홈 화면"</b></div>
+    </div>
+    <button onclick="document.getElementById('ios-guide').style.display='none'" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">확인</button>
+  </div>
+</div>
+
+</body>
+</html>
