@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>브라우저 정보</title>
+<style>
+body{font-family:monospace;padding:20px;background:#f0f4ff;word-break:break-all;font-size:13px}
+.box{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid #dce6f5}
+h3{font-size:14px;color:#1428A0;margin-bottom:8px}
+p{color:#333;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="box"><h3>User Agent</h3><p id="ua"></p></div>
+<div class="box"><h3>감지 결과</h3><p id="result"></p></div>
+<script>
+var ua = navigator.userAgent;
+document.getElementById('ua').textContent = ua;
+var isIOS = /iPhone|iPad|iPod/i.test(ua);
+var isSamsung = /SamsungBrowser/i.test(ua);
+var isChrome = /Chrome\/\d/i.test(ua) && !/SamsungBrowser|Edg\/|OPR\/|NAVER|DaumApps|KAKAOTALK|Instagram|FBAN|FBAV|Twitter|Line/i.test(ua);
+var isPWAReady = isSamsung || isChrome;
+document.getElementById('result').innerHTML =
+  'isIOS: ' + isIOS + '<br>' +
+  'isSamsung: ' + isSamsung + '<br>' +
+  'isChrome: ' + isChrome + '<br>' +
+  'isPWAReady: ' + isPWAReady + '<br>' +
+  'beforeinstallprompt 지원: ' + ('onbeforeinstallprompt' in window);
+window.addEventListener('beforeinstallprompt', function(e) {
+  document.getElementById('result').innerHTML += '<br><strong style="color:green">✅ beforeinstallprompt 발생!</strong>';
+});
+setTimeout(function(){
+  if(!document.getElementById('result').innerHTML.includes('발생')) {
+    document.getElementById('result').innerHTML += '<br><strong style="color:red">❌ 3초 내 beforeinstallprompt 미발생</strong>';
+  }
+}, 3000);
+</script>
+</body>
+</html>
