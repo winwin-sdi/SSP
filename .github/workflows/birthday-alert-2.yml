@@ -1,0 +1,126 @@
+name: Birthday Alert
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  birthday-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check and send birthday email
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          python3 << 'PYEOF'
+          import smtplib
+          import os
+          from datetime import datetime, timezone, timedelta
+          from email.mime.text import MIMEText
+          from email.mime.multipart import MIMEMultipart
+
+          KST = timezone(timedelta(hours=9))
+          now = datetime.now(KST)
+          today = f"{now.month}월 {now.day}일"
+
+          companies = [
+            ("(주)고려이노테크", "7월 1일"),
+            ("(주)넥스플러스", "4월 16일"),
+            ("(주)디케이티", "5월 1일"),
+            ("(주)베스텍", "3월 27일"),
+            ("(주)보백씨엔에스", "3월 30일"),
+            ("(주)비씨젠", "6월 1일"),
+            ("(주)삼진엘앤디", "4월 1일"),
+            ("(주)상아프론테크", "5월 1일"),
+            ("(주)서진시스템", "7월 15일"),
+            ("(주)SFA넥셀", "4월 15일"),
+            ("(주)에스에프에이", "4월 15일"),
+            ("(주)에코프로비엠", "5월 1일"),
+            ("(주)에이치비테크놀러지", "9월 2일"),
+            ("(주)엔시스", "1월 12일"),
+            ("(주)엘앤에프", "7월 27일"),
+            ("(주)엠오티", "9월 22일"),
+            ("(주)원익피앤이", "4월 1일"),
+            ("(주)이노메트리", "6월 3일"),
+            ("(주)이엔에프테크놀로지", "5월 1일"),
+            ("(주)제이이엔지", "6월 1일"),
+            ("(주)천보", "10월 1일"),
+            ("(주)켐트로스", "3월 7일"),
+            ("(주)코엠", "1월 27일"),
+            ("(주)파워로직스", "8월 19일"),
+            ("(주)파인엠텍", "4월 1일"),
+            ("(주)포스코퓨처엠", "4월 1일"),
+            ("(주)필에너지", "4월 1일"),
+            ("(주)한중엔시에스", "8월 31일"),
+            ("(주)티엠프라자", "10월 20일"),
+            ("더블유씨피(주)", "10월 26일"),
+            ("덕산약품공업(주)", "5월 1일"),
+            ("넥스콘테크놀러지(주)", "10월 9일"),
+            ("동원시스템즈(주)", "5월 31일"),
+            ("동화일렉트로라이트(주)", "8월 20일"),
+            ("디아이동일(주)", "9월 1일"),
+            ("롯데에너지머티리얼즈(주)", "3월 14일"),
+            ("롯데인프라셀(주)", "4월 1일"),
+            ("마이크로웍스솔루션즈(주)", "10월 16일"),
+            ("삼성기전(주)", "2월 1일"),
+            ("상신이디피(주)", "5월 1일"),
+            ("성일하이텍(주)", "3월 6일"),
+            ("솔브레인(주)", "5월 6일"),
+            ("신형에프에이(주)", "5월 2일"),
+            ("신흥에스이씨(주)", "5월 16일"),
+            ("재원산업(주)", "9월 25일"),
+            ("코스모신소재(주)", "10월 28일"),
+            ("한국유미코아배터리머티리얼즈(유)", "9월 2일"),
+            ("한화모멘텀(주)", "10월 9일"),
+            ("(주)아이티엠반도체", "2월 23일"),
+            ("(주)신흥정밀", "11월 1일"),
+          ]
+
+          celebs = [name for name, date in companies if date == today]
+
+          if not celebs:
+              print(f"No birthday today ({today})")
+              exit(0)
+
+          print(f"Birthday: {celebs}")
+
+          names_html = ''.join(f'<li style="font-size:18px;font-weight:700;color:#1428A0;padding:4px 0">{n}</li>' for n in celebs)
+          names_text = ', '.join(celebs)
+          subject = f"[{today}] SSP 파트너사 창립기념일 알림"
+
+          html_body = f"""<div style="font-family:sans-serif;max-width:480px;margin:0 auto">
+            <div style="background:linear-gradient(135deg,#1428A0,#2563eb);border-radius:16px;padding:28px 24px;text-align:center;margin-bottom:20px">
+              <div style="font-size:40px;margin-bottom:8px">&#x1F382;&#x1F389;</div>
+              <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">오늘 창립기념일!</div>
+              <div style="font-size:14px;color:rgba(255,255,255,.8)">{today}</div>
+            </div>
+            <div style="background:#f8faff;border-radius:12px;padding:20px 24px;margin-bottom:16px">
+              <div style="font-size:13px;color:#64748b;margin-bottom:10px;font-weight:600">창립기념일 파트너사</div>
+              <ul style="margin:0;padding-left:20px">{names_html}</ul>
+            </div>
+            <div style="background:#eff6ff;border-radius:12px;padding:16px 20px;text-align:center">
+              <div style="font-size:14px;color:#1e40af;font-weight:600">창립을 진심으로 축하드립니다!</div>
+              <div style="font-size:12px;color:#64748b;margin-top:6px">SSP 수첩 자동 알림</div>
+            </div>
+          </div>"""
+
+          recipients = ["mcsh.kim@samsung.com","sy11.jung@samsung.com","doosh@samsung.com"]
+          gmail_user = os.environ['GMAIL_USER']
+          gmail_pw = os.environ['GMAIL_APP_PASSWORD']
+
+          msg = MIMEMultipart('alternative')
+          msg['Subject'] = subject
+          msg['From'] = f"SSP Birthday Alert <{gmail_user}>"
+          msg['To'] = ', '.join(recipients)
+          msg.attach(MIMEText(f"[{today}] 창립기념일: {names_text}", 'plain', 'utf-8'))
+          msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+
+          with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+              smtp.login(gmail_user, gmail_pw)
+              smtp.sendmail(gmail_user, recipients, msg.as_string())
+
+          print(f"Sent to {recipients}")
+          PYEOF
