@@ -1,0 +1,131 @@
+name: News Collect
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'
+  workflow_dispatch:
+
+jobs:
+  collect-news:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Collect Naver News and save to Firebase
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          FIREBASE_URL: https://shuttle-bus-cd8c2-default-rtdb.asia-southeast1.firebasedatabase.app
+        run: |
+          python3 << 'PYEOF'
+          import urllib.request
+          import urllib.parse
+          import json
+          import os
+          import time
+          from datetime import datetime, timezone, timedelta
+
+          KST = timezone(timedelta(hours=9))
+          now = datetime.now(KST)
+          ym = now.strftime("%Y-%m")
+
+          CLIENT_ID = os.environ['NAVER_CLIENT_ID']
+          CLIENT_SECRET = os.environ['NAVER_CLIENT_SECRET']
+          FIREBASE_URL = os.environ['FIREBASE_URL']
+
+          # 블로그 도메인 제외 목록
+          BLOG_DOMAINS = [
+              'blog.naver.com', 'post.naver.com', 'cafe.naver.com',
+              'blog.daum.net', 'tistory.com', 'brunch.co.kr',
+              'm.blog.naver.com', 'kin.naver.com'
+          ]
+
+          companies = [
+            "재원산업", "더블유씨피", "덕산약품공업", "동원시스템즈",
+            "동화일렉트로라이트", "디아이동일", "롯데에너지머티리얼즈",
+            "롯데인프라셀", "마이크로웍스솔루션즈", "성일하이텍",
+            "솔브레인", "SFA넥셀", "에코프로비엠", "엘앤에프",
+            "이엔에프테크놀로지", "천보", "켐트로스", "코스모신소재",
+            "포스코퓨처엠", "유미코아배터리머티리얼즈", "한화모멘텀",
+            "상신이디피", "고려이노테크", "넥스플러스", "비씨젠",
+            "상아프론테크", "신흥에스이씨", "신흥정밀", "에스에프에이",
+            "에이치비테크놀러지", "엔시스", "엠오티", "이노메트리",
+            "제이이엔지", "코엠", "필에너지", "넥스콘테크놀러지",
+            "디케이티", "베스텍", "보백씨엔에스", "삼성기전",
+            "삼진엘앤디", "서진시스템", "신형에프에이", "아이티엠반도체",
+            "원익피앤이", "티엠프라자", "파워로직스", "파인엠텍", "한중엔시에스"
+          ]
+
+          def search_news(company):
+              query = urllib.parse.quote(company)
+              url = f"https://openapi.naver.com/v1/search/news.json?query={query}&display=10&sort=date"
+              req = urllib.request.Request(url)
+              req.add_header('X-Naver-Client-Id', CLIENT_ID)
+              req.add_header('X-Naver-Client-Secret', CLIENT_SECRET)
+              try:
+                  with urllib.request.urlopen(req, timeout=10) as res:
+                      return json.loads(res.read().decode('utf-8'))
+              except Exception as e:
+                  print(f"Error searching {company}: {e}")
+                  return None
+
+          def is_blog(link):
+              for domain in BLOG_DOMAINS:
+                  if domain in link:
+                      return True
+              return False
+
+          def clean_html(text):
+              import re
+              return re.sub(r'<[^>]+>', '', text).replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"').replace('&#39;', "'")
+
+          def save_to_firebase(data):
+              url = f"{FIREBASE_URL}/ssp_news/{ym}.json"
+              payload = json.dumps(data, ensure_ascii=False).encode('utf-8')
+              req = urllib.request.Request(url, data=payload, method='PUT')
+              req.add_header('Content-Type', 'application/json')
+              try:
+                  with urllib.request.urlopen(req, timeout=15) as res:
+                      print(f"Firebase 저장 완료: {res.status}")
+              except Exception as e:
+                  print(f"Firebase 저장 실패: {e}")
+
+          all_news = {}
+          total = 0
+
+          for company in companies:
+              result = search_news(company)
+              if not result or 'items' not in result:
+                  all_news[company] = []
+                  time.sleep(0.1)
+                  continue
+
+              filtered = []
+              for item in result['items']:
+                  link = item.get('link', '') or item.get('originallink', '')
+                  if is_blog(link):
+                      continue
+                  filtered.append({
+                      'title': clean_html(item.get('title', '')),
+                      'link': link,
+                      'desc': clean_html(item.get('description', '')),
+                      'date': item.get('pubDate', ''),
+                      'source': item.get('originallink', link)
+                  })
+                  if len(filtered) >= 5:
+                      break
+
+              all_news[company] = filtered
+              total += len(filtered)
+              print(f"{company}: {len(filtered)}건")
+              time.sleep(0.12)
+
+          data = {
+              'updated': now.strftime('%Y-%m-%d %H:%M'),
+              'year_month': ym,
+              'total': total,
+              'news': all_news
+          }
+
+          save_to_firebase(data)
+          print(f"\n완료: 총 {total}건 수집 ({ym})")
+          PYEOF
