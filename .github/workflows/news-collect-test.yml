@@ -1,0 +1,197 @@
+name: News Collect (Test - Date Range)
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: '수집 시작일 (YYYY-MM-DD)'
+        required: true
+        default: '2026-06-01'
+      end_date:
+        description: '수집 종료일 (YYYY-MM-DD)'
+        required: true
+        default: '2026-06-30'
+
+jobs:
+  collect-news-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Collect news (date range) and send review email
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          FIREBASE_URL: https://shuttle-bus-cd8c2-default-rtdb.asia-southeast1.firebasedatabase.app
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          START_DATE: ${{ github.event.inputs.start_date }}
+          END_DATE: ${{ github.event.inputs.end_date }}
+        run: |
+          python3 << 'PYEOF'
+          import urllib.request, urllib.parse, json, os, time, smtplib, re
+          from datetime import datetime, timezone, timedelta
+          from email.mime.text import MIMEText
+          from email.mime.multipart import MIMEMultipart
+          from email.utils import parsedate_to_datetime
+
+          KST = timezone(timedelta(hours=9))
+          now = datetime.now(KST)
+
+          CLIENT_ID = os.environ['NAVER_CLIENT_ID']
+          CLIENT_SECRET = os.environ['NAVER_CLIENT_SECRET']
+          FIREBASE_URL = os.environ['FIREBASE_URL']
+          GMAIL_USER = os.environ['GMAIL_USER']
+          GMAIL_PW = os.environ['GMAIL_APP_PASSWORD']
+
+          START_DATE = datetime.strptime(os.environ['START_DATE'], '%Y-%m-%d').replace(tzinfo=KST)
+          END_DATE = datetime.strptime(os.environ['END_DATE'], '%Y-%m-%d').replace(tzinfo=KST, hour=23, minute=59, second=59)
+          period_label = f"{START_DATE.strftime('%Y-%m-%d')} ~ {END_DATE.strftime('%Y-%m-%d')}"
+          ym_test = f"test_{START_DATE.strftime('%Y%m%d')}_{END_DATE.strftime('%Y%m%d')}"
+
+          BLOG_DOMAINS = [
+              'blog.naver.com','post.naver.com','cafe.naver.com',
+              'blog.daum.net','tistory.com','brunch.co.kr',
+              'm.blog.naver.com','kin.naver.com'
+          ]
+
+          companies = [
+            "재원산업","더블유씨피","덕산약품공업","동원시스템즈",
+            "동화일렉트로라이트","디아이동일","롯데에너지머티리얼즈",
+            "롯데인프라셀","마이크로웍스솔루션즈","성일하이텍",
+            "솔브레인","SFA넥셀","에코프로비엠","엘앤에프",
+            "이엔에프테크놀로지","천보","켐트로스","코스모신소재",
+            "포스코퓨처엠","유미코아배터리머티리얼즈","한화모멘텀",
+            "상신이디피","고려이노테크","넥스플러스","비씨젠",
+            "상아프론테크","신흥에스이씨","신흥정밀","에스에프에이",
+            "에이치비테크놀러지","엔시스","엠오티","이노메트리",
+            "제이이엔지","코엠","필에너지","넥스콘테크놀러지",
+            "디케이티","베스텍","보백씨엔에스","삼성기전",
+            "삼진엘앤디","서진시스템","신형에프에이","아이티엠반도체",
+            "원익피앤이","티엠프라자","파워로직스","파인엠텍","한중엔시에스"
+          ]
+
+          def search_news(company):
+              # 기간 필터를 위해 최대치(100건)를 가져와 그 안에서 걸러낸다.
+              # 네이버 뉴스 검색 API는 날짜range 서버측 필터를 지원하지 않으므로
+              # 클라이언트에서 pubDate로 필터링한다. (API 특성상 특정 회사는
+              # 해당 기간 기사가 조회 범위 밖에 있을 경우 0건일 수 있음)
+              query = urllib.parse.quote(company)
+              url = f"https://openapi.naver.com/v1/search/news.json?query={query}&display=100&sort=date"
+              req = urllib.request.Request(url)
+              req.add_header('X-Naver-Client-Id', CLIENT_ID)
+              req.add_header('X-Naver-Client-Secret', CLIENT_SECRET)
+              try:
+                  with urllib.request.urlopen(req, timeout=10) as res:
+                      return json.loads(res.read().decode('utf-8'))
+              except:
+                  return None
+
+          def is_blog(link):
+              return any(d in link for d in BLOG_DOMAINS)
+
+          def clean(text):
+              return re.sub(r'<[^>]+>', '', text).replace('&amp;','&').replace('&lt;','<').replace('&gt;','>').replace('&quot;','"').replace('&#39;',"'")
+
+          def in_range(pub_date_str):
+              try:
+                  dt = parsedate_to_datetime(pub_date_str)
+                  if dt.tzinfo is None:
+                      dt = dt.replace(tzinfo=timezone.utc)
+                  dt_kst = dt.astimezone(KST)
+                  return START_DATE <= dt_kst <= END_DATE
+              except:
+                  return False
+
+          def save_firebase(data):
+              url = f"{FIREBASE_URL}/ssp_news/{ym_test}.json"
+              payload = json.dumps(data, ensure_ascii=False).encode('utf-8')
+              req = urllib.request.Request(url, data=payload, method='PUT')
+              req.add_header('Content-Type', 'application/json')
+              with urllib.request.urlopen(req, timeout=15) as res:
+                  print(f"Firebase 저장: {res.status}")
+
+          all_news = {}
+          total = 0
+
+          for company in companies:
+              result = search_news(company)
+              filtered = []
+              if result and 'items' in result:
+                  for item in result['items']:
+                      link = item.get('link','') or item.get('originallink','')
+                      if is_blog(link): continue
+                      pub_date = item.get('pubDate','')
+                      if not in_range(pub_date): continue
+                      filtered.append({
+                          'title': clean(item.get('title','')),
+                          'link': link,
+                          'desc': clean(item.get('description','')),
+                          'date': pub_date[:16],
+                      })
+                      if len(filtered) >= 5: break
+              all_news[company] = filtered
+              total += len(filtered)
+              print(f"{company}: {len(filtered)}건")
+              time.sleep(0.12)
+
+          data = {
+              'updated': now.strftime('%Y-%m-%d %H:%M'),
+              'period': period_label,
+              'total': total,
+              'news': all_news,
+              'approved': False,
+              'test': True
+          }
+          save_firebase(data)
+
+          # ── 검토 이메일 생성 ──
+          news_html = ''
+          for company, items in all_news.items():
+              if not items: continue
+              news_html += f'<div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">'
+              news_html += f'<div style="background:#1428A0;color:#fff;padding:8px 14px;font-size:13px;font-weight:700">{company}</div>'
+              for item in items:
+                  news_html += f'''<div style="padding:10px 14px;border-bottom:1px solid #f1f5f9">
+                    <a href="{item["link"]}" style="font-size:13px;font-weight:600;color:#1e293b;text-decoration:none">{item["title"]}</a>
+                    <div style="font-size:11px;color:#94a3b8;margin-top:3px">{item["date"]}</div>
+                  </div>'''
+              news_html += '</div>'
+
+          if not news_html:
+              news_html = '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">해당 기간에 조회된 뉴스가 없습니다.</div>'
+
+          approve_url = "https://github.com/winwin-sdi/SSP/actions/workflows/news-send.yml"
+
+          html_body = f"""
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+            <div style="background:linear-gradient(160deg,#0a1628,#1428A0);border-radius:16px;padding:28px 24px;text-align:center;margin-bottom:16px">
+              <div style="font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.55);margin-bottom:12px">SAMSUNG SDI PARTNERS ASSOCIATION</div>
+              <div style="font-size:20px;font-weight:900;color:#fff;margin-bottom:6px">[테스트] {period_label} 파트너사 뉴스</div>
+              <div style="font-size:13px;color:rgba(255,255,255,.65)">총 {total}건 수집 · 검토 후 승인해 주세요</div>
+            </div>
+            <div style="background:#fff;border-radius:12px;padding:20px;margin-bottom:14px;border:1px solid #e2e8f0">
+              {news_html}
+            </div>
+            <div style="text-align:center;margin-bottom:20px">
+              <a href="{approve_url}" style="display:inline-block;background:#1428A0;color:#fff;padding:14px 40px;border-radius:12px;font-size:15px;font-weight:800;text-decoration:none">
+                ✅ 검토 완료 · 뉴스레터 발송 승인
+              </a>
+              <div style="font-size:12px;color:#94a3b8;margin-top:8px">이 메일은 테스트용입니다. 실제 발송 시 news-send.yml은 당월 데이터를 기준으로 동작합니다.</div>
+            </div>
+          </div>
+          """
+
+          msg = MIMEMultipart('alternative')
+          msg['Subject'] = f"[SSP 뉴스레터 테스트] {period_label} 검토 요청"
+          msg['From'] = f"SSP 협의회 <{GMAIL_USER}>"
+          msg['To'] = "mcsh.kim@samsung.com"
+          msg.attach(MIMEText(f"[테스트] {period_label} 뉴스 {total}건 수집 완료.", 'plain', 'utf-8'))
+          msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+
+          with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+              smtp.login(GMAIL_USER, GMAIL_PW)
+              smtp.sendmail(GMAIL_USER, ["mcsh.kim@samsung.com"], msg.as_string())
+
+          print(f"검토 이메일 발송 완료 → mcsh.kim@samsung.com")
+          print(f"총 {total}건 수집 (기간: {period_label})")
+          PYEOF
