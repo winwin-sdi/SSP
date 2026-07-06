@@ -1,0 +1,159 @@
+name: News Send
+
+on:
+  workflow_dispatch:
+
+jobs:
+  send-newsletter:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send newsletter to all recipients
+        env:
+          FIREBASE_URL: https://shuttle-bus-cd8c2-default-rtdb.asia-southeast1.firebasedatabase.app
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          python3 << 'PYEOF'
+          import urllib.request, json, os, smtplib, re
+          from datetime import datetime, timezone, timedelta
+          from email.mime.text import MIMEText
+          from email.mime.multipart import MIMEMultipart
+
+          KST = timezone(timedelta(hours=9))
+          now = datetime.now(KST)
+          ym = now.strftime("%Y-%m")
+          ym_kor = now.strftime("%Y년 %-m월")
+
+          FIREBASE_URL = os.environ['FIREBASE_URL']
+          GMAIL_USER = os.environ['GMAIL_USER']
+          GMAIL_PW = os.environ['GMAIL_APP_PASSWORD']
+
+          # Firebase에서 뉴스 데이터 불러오기
+          url = f"{FIREBASE_URL}/ssp_news/{ym}.json"
+          req = urllib.request.Request(url)
+          with urllib.request.urlopen(req, timeout=15) as res:
+              data = json.loads(res.read().decode('utf-8'))
+
+          if not data or not data.get('news'):
+              print("뉴스 데이터 없음")
+              exit(1)
+
+          total = data.get('total', 0)
+          all_news = data['news']
+
+          # 수신자 목록 (대표 + 담당자)
+          recipients = [
+              "mcsh.kim@samsung.com",
+              "sy11.jung@samsung.com",
+              "doosh@samsung.com",
+              "cbcsrlee@chunbochem.com",
+              "gschung@lotte.net",
+              "shim@jaewon.co.kr",
+              "withyou@w-scope.com",
+              "delangel@duksan.kr",
+              "andrewchung@dongwon.com",
+              "johnkim@dongwha.com",
+              "ckpark@dong-il.com",
+              "lee-seungmin@lotte.net",
+              "yongsun.shin@m-wks.com",
+              "ykmke@sungeelht.com",
+              "hschung@soulbrain.co.kr",
+              "dong.jin.kim@sfanexel.co.kr",
+              "mhchoi@ecoprobm.com",
+              "jaehur76@landf.co.kr",
+              "kkyungmee@enftech.com",
+              "cbcsrlee@chunbochem.com",
+              "hr@chemtros.com",
+              "dhh@cosmoamt.com",
+              "290469@poscofuturem.com",
+              "taekyun.kim@ap.umicore.com",
+              "cios.hong@hanwha.com",
+              "mckim@ssedp.co.kr",
+              "heoh@kinno.co.kr",
+              "LDH218@nexplus.co.kr",
+              "rickylee@bcgen.co.kr",
+              "swlee@sftc.co.kr",
+              "shsec@shsec.co.kr",
+              "yoosurk.jung@shc.co.kr",
+              "rlatkdrud@sfa.co.kr",
+              "sjmoon@hbtechnology.co.kr",
+              "sejin@n-sys.co.kr",
+              "mot@motfa.com",
+              "gslee@innometry.com",
+              "weontae@j-eng.co.kr",
+              "koem@korea.com",
+              "philoptics@philoptics.com",
+              "gjheo@nexcontech.com",
+              "sdjulio010@dkttech.kr",
+              "bestec_1st@daum.net",
+              "sdj21y@bokcns.com",
+              "ceo@samsung-mecha.com",
+              "mjlee@samjin.co.kr",
+              "Jon04@seojinsys.co.kr",
+              "lovesinhh@daum.net",
+              "jdk63@it-m.co.kr",
+              "lkc0537@wonik.com",
+              "pmk8852@naver.com",
+              "kskim@powerlogics.kr",
+              "hongsc@finemtec.com",
+              "ceokims@hjncs.com",
+          ]
+          # 중복 제거
+          recipients = list(dict.fromkeys(recipients))
+
+          # 뉴스레터 HTML 생성
+          news_html = ''
+          for company, items in all_news.items():
+              if not items: continue
+              news_html += f'<div style="margin-bottom:18px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">'
+              news_html += f'<div style="background:#1428A0;color:#fff;padding:8px 14px;font-size:13px;font-weight:700">{company}</div>'
+              for item in items:
+                  news_html += f'''<div style="padding:10px 14px;border-bottom:1px solid #f1f5f9">
+                    <a href="{item["link"]}" style="font-size:13px;font-weight:600;color:#1e293b;text-decoration:none">{item["title"]}</a>
+                    <div style="font-size:11px;color:#94a3b8;margin-top:3px">{item["date"]}</div>
+                  </div>'''
+              news_html += '</div>'
+
+          html_body = f"""
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+            <div style="background:linear-gradient(160deg,#0a1628,#1428A0);border-radius:16px;padding:28px 24px;text-align:center;margin-bottom:16px">
+              <div style="font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.55);margin-bottom:12px">SAMSUNG SDI PARTNERS ASSOCIATION</div>
+              <div style="width:40px;height:1px;background:rgba(255,255,255,.3);margin:0 auto 16px"></div>
+              <div style="font-size:24px;font-weight:900;color:#fff;margin-bottom:6px">{ym_kor} 파트너사 뉴스</div>
+              <div style="font-size:13px;color:rgba(255,255,255,.65)">SSP 협의회 월간 뉴스레터</div>
+            </div>
+            <div style="background:#fff;border-radius:12px;padding:20px;margin-bottom:14px;border:1px solid #e2e8f0">
+              <p style="font-size:14px;color:#334155;line-height:1.8;margin:0 0 20px 0">
+                안녕하십니까. SSP(삼성SDI 파트너사 협의회)입니다.<br>
+                {ym_kor} 파트너사 주요 뉴스를 전달드립니다.
+              </p>
+              {news_html}
+            </div>
+            <div style="background:#eff6ff;border-radius:12px;padding:18px 20px;text-align:center;border:1px solid #bfdbfe">
+              <div style="font-size:15px;color:#1428A0;font-weight:800;margin-bottom:4px">SSP 제12기 드림</div>
+              <div style="font-size:11px;color:#64748b;letter-spacing:.5px">Samsung SDI Partners Association</div>
+            </div>
+          </div>
+          """
+
+          def send_email(to_list, subject, html):
+              msg = MIMEMultipart('alternative')
+              msg['Subject'] = subject
+              msg['From'] = f"SSP 협의회 <{GMAIL_USER}>"
+              msg['To'] = ', '.join(to_list)
+              msg.attach(MIMEText(f"SSP {ym_kor} 파트너사 뉴스레터입니다.", 'plain', 'utf-8'))
+              msg.attach(MIMEText(html, 'html', 'utf-8'))
+              with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+                  smtp.login(GMAIL_USER, GMAIL_PW)
+                  smtp.sendmail(GMAIL_USER, to_list, msg.as_string())
+
+          # 50명씩 나눠서 발송
+          chunk_size = 50
+          for i in range(0, len(recipients), chunk_size):
+              chunk = recipients[i:i+chunk_size]
+              send_email(chunk, f"[SSP] {ym_kor} 파트너사 뉴스레터", html_body)
+              print(f"발송 완료: {chunk}")
+
+          print(f"\n뉴스레터 발송 완료 → 총 {len(recipients)}명")
+          PYEOF
