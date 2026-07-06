@@ -1,0 +1,287 @@
+name: News Collect (Test - Date Range)
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: '수집 시작일 (YYYY-MM-DD)'
+        required: true
+        default: '2026-06-01'
+      end_date:
+        description: '수집 종료일 (YYYY-MM-DD)'
+        required: true
+        default: '2026-06-30'
+
+jobs:
+  collect-news-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Collect news (date range) and send review email
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          FIREBASE_URL: https://shuttle-bus-cd8c2-default-rtdb.asia-southeast1.firebasedatabase.app
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          START_DATE: ${{ github.event.inputs.start_date }}
+          END_DATE: ${{ github.event.inputs.end_date }}
+        run: |
+          python3 << 'PYEOF'
+          import urllib.request, urllib.parse, json, os, time, smtplib, re
+          from datetime import datetime, timezone, timedelta
+          from email.mime.text import MIMEText
+          from email.mime.multipart import MIMEMultipart
+          from email.utils import parsedate_to_datetime
+
+          KST = timezone(timedelta(hours=9))
+          now = datetime.now(KST)
+
+          CLIENT_ID = os.environ['NAVER_CLIENT_ID']
+          CLIENT_SECRET = os.environ['NAVER_CLIENT_SECRET']
+          FIREBASE_URL = os.environ['FIREBASE_URL']
+          GMAIL_USER = os.environ['GMAIL_USER']
+          GMAIL_PW = os.environ['GMAIL_APP_PASSWORD']
+
+          START_DATE = datetime.strptime(os.environ['START_DATE'], '%Y-%m-%d').replace(tzinfo=KST)
+          END_DATE = datetime.strptime(os.environ['END_DATE'], '%Y-%m-%d').replace(tzinfo=KST, hour=23, minute=59, second=59)
+          period_label = f"{START_DATE.strftime('%Y-%m-%d')} ~ {END_DATE.strftime('%Y-%m-%d')}"
+          ym_test = f"test_{START_DATE.strftime('%Y%m%d')}_{END_DATE.strftime('%Y%m%d')}"
+
+          BLOG_DOMAINS = [
+              'blog.naver.com','post.naver.com','cafe.naver.com',
+              'blog.daum.net','tistory.com','brunch.co.kr',
+              'm.blog.naver.com','kin.naver.com'
+          ]
+
+          EXCLUDE_KEYWORDS = [
+              '증권','증권사','증권가','주가','목표주가','목표가',
+              '코스피','코스닥','상한가','하한가','급등','급락',
+              '매수의견','매도의견','투자의견','리포트','애널리스트',
+              '시가총액','액면분할','유상증자','무상증자','자사주',
+              '배당','배당금','신저가','신고가','공매도','대차잔고',
+              '순매수','순매도','종가','시초가','상장폐지'
+          ]
+
+          # 시황/증시 요약성 기사(회사가 목록에만 나열되는 유형) 제외 키워드
+          MARKET_ROUNDUP_KEYWORDS = [
+              '특징주','이 시각','시황','마감시황','장 마감','관련주',
+              '테마주','상승률상위','하락률상위','거래량상위','매매동향',
+              '프로그램매매','외국인 매매','기관 매매','투자주의','투자경고',
+              '투자위험','52주 신고가','52주 신저가'
+          ]
+
+          # 회사 성과(자랑거리) 관련 기사를 우선적으로 찾기 위한 보조 검색어
+          ACHIEVEMENT_TOPICS = [
+              '신기술','수주','계약','특허','준공','투자','출시',
+              'MOU','수출','인증','수상','대표'
+          ]
+
+          companies = [
+            "재원산업","더블유씨피","덕산약품공업","동원시스템즈",
+            "동화일렉트로라이트","디아이동일","롯데에너지머티리얼즈",
+            "롯데인프라셀","마이크로웍스솔루션즈","성일하이텍",
+            "솔브레인","SFA넥셀","에코프로비엠","엘앤에프",
+            "이엔에프테크놀로지","천보","켐트로스","코스모신소재",
+            "포스코퓨처엠","유미코아배터리머티리얼즈","한화모멘텀",
+            "상신이디피","고려이노테크","넥스플러스","비씨젠",
+            "상아프론테크","신흥에스이씨","신흥정밀","에스에프에이",
+            "에이치비테크놀러지","엔시스","엠오티","이노메트리",
+            "제이이엔지","코엠","필에너지","넥스콘테크놀러지",
+            "디케이티","베스텍","보백씨엔에스","삼성기전",
+            "삼진엘앤디","서진시스템","신형에프에이","아이티엠반도체",
+            "원익피앤이","티엠프라자","파워로직스","파인엠텍","한중엔시에스"
+          ]
+
+          def naver_search(query, display=50):
+              q = urllib.parse.quote(query)
+              url = f"https://openapi.naver.com/v1/search/news.json?query={q}&display={display}&sort=date"
+              req = urllib.request.Request(url)
+              req.add_header('X-Naver-Client-Id', CLIENT_ID)
+              req.add_header('X-Naver-Client-Secret', CLIENT_SECRET)
+              try:
+                  with urllib.request.urlopen(req, timeout=10) as res:
+                      return json.loads(res.read().decode('utf-8'))
+              except:
+                  return None
+
+          def is_blog(link):
+              return any(d in link for d in BLOG_DOMAINS)
+
+          def is_excluded(title, desc):
+              text = title + ' ' + desc
+              if any(k in text for k in EXCLUDE_KEYWORDS):
+                  return True
+              if any(k in text for k in MARKET_ROUNDUP_KEYWORDS):
+                  return True
+              return False
+
+          def company_in_title(company, title):
+              return company in title
+
+          def clean(text):
+              return re.sub(r'<[^>]+>', '', text).replace('&amp;','&').replace('&lt;','<').replace('&gt;','>').replace('&quot;','"').replace('&#39;',"'")
+
+          def in_range(pub_date_str):
+              try:
+                  dt = parsedate_to_datetime(pub_date_str)
+                  if dt.tzinfo is None:
+                      dt = dt.replace(tzinfo=timezone.utc)
+                  dt_kst = dt.astimezone(KST)
+                  return START_DATE <= dt_kst <= END_DATE
+              except:
+                  return False
+
+          def collect_for_company(company):
+              seen_links = set()
+              achievement_pool = []
+              general_pool = []
+
+              # 1) 성과 키워드 검색 (우선순위 높음)
+              for topic in ACHIEVEMENT_TOPICS:
+                  result = naver_search(f"{company} {topic}", display=30)
+                  time.sleep(0.12)
+                  if not result or 'items' not in result:
+                      continue
+                  for item in result['items']:
+                      link = item.get('link','') or item.get('originallink','')
+                      if not link or link in seen_links:
+                          continue
+                      if is_blog(link):
+                          continue
+                      pub_date = item.get('pubDate','')
+                      if not in_range(pub_date):
+                          continue
+                      title = clean(item.get('title',''))
+                      desc = clean(item.get('description',''))
+                      if is_excluded(title, desc):
+                          continue
+                      if not company_in_title(company, title):
+                          continue
+                      seen_links.add(link)
+                      achievement_pool.append({
+                          'title': title, 'link': link, 'desc': desc,
+                          'date': pub_date[:16], '_raw_date': pub_date
+                      })
+
+              # 2) 회사명 단독 검색 (기간 필터가 있으므로 넉넉히 100건까지 확인)
+              result = naver_search(company, display=100)
+              time.sleep(0.12)
+              if result and 'items' in result:
+                  for item in result['items']:
+                      link = item.get('link','') or item.get('originallink','')
+                      if not link or link in seen_links:
+                          continue
+                      if is_blog(link):
+                          continue
+                      pub_date = item.get('pubDate','')
+                      if not in_range(pub_date):
+                          continue
+                      title = clean(item.get('title',''))
+                      desc = clean(item.get('description',''))
+                      if is_excluded(title, desc):
+                          continue
+                      if not company_in_title(company, title):
+                          continue
+                      seen_links.add(link)
+                      general_pool.append({
+                          'title': title, 'link': link, 'desc': desc,
+                          'date': pub_date[:16], '_raw_date': pub_date
+                      })
+
+              def sort_key(x):
+                  try:
+                      return parsedate_to_datetime(x['_raw_date'])
+                  except:
+                      return datetime.min.replace(tzinfo=timezone.utc)
+              achievement_pool.sort(key=sort_key, reverse=True)
+              general_pool.sort(key=sort_key, reverse=True)
+
+              combined = (achievement_pool + general_pool)[:5]
+              for c in combined:
+                  c.pop('_raw_date', None)
+              return combined
+
+          def save_firebase(data):
+              url = f"{FIREBASE_URL}/ssp_news/{ym_test}.json"
+              payload = json.dumps(data, ensure_ascii=False).encode('utf-8')
+              req = urllib.request.Request(url, data=payload, method='PUT')
+              req.add_header('Content-Type', 'application/json')
+              with urllib.request.urlopen(req, timeout=15) as res:
+                  print(f"Firebase 저장: {res.status}")
+
+          all_news = {}
+          total = 0
+
+          for company in companies:
+              filtered = collect_for_company(company)
+              all_news[company] = filtered
+              total += len(filtered)
+              print(f"{company}: {len(filtered)}건")
+
+          data = {
+              'updated': now.strftime('%Y-%m-%d %H:%M'),
+              'period': period_label,
+              'total': total,
+              'news': all_news,
+              'approved': False,
+              'test': True
+          }
+          save_firebase(data)
+
+          news_html = ''
+          for company, items in all_news.items():
+              if not items: continue
+              news_html += f'<div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">'
+              news_html += f'<div style="background:#1428A0;color:#fff;padding:8px 14px;font-size:13px;font-weight:700">{company}</div>'
+              for item in items:
+                  news_html += f'''<div style="padding:10px 14px;border-bottom:1px solid #f1f5f9">
+                    <a href="{item["link"]}" style="font-size:13px;font-weight:600;color:#1e293b;text-decoration:none">{item["title"]}</a>
+                    <div style="font-size:11px;color:#94a3b8;margin-top:3px">{item["date"]}</div>
+                  </div>'''
+              news_html += '</div>'
+
+          if not news_html:
+              news_html = '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">해당 기간에 조회된 뉴스가 없습니다.</div>'
+
+          review_url = f"https://winwin-sdi.github.io/SSP/news-review.html?ym={ym_test}"
+          send_url = "https://github.com/winwin-sdi/SSP/actions/workflows/news-send.yml"
+
+          html_body = f"""
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+            <div style="background:linear-gradient(160deg,#0a1628,#1428A0);border-radius:16px;padding:28px 24px;text-align:center;margin-bottom:16px">
+              <div style="font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.55);margin-bottom:12px">SAMSUNG SDI PARTNERS ASSOCIATION</div>
+              <div style="font-size:20px;font-weight:900;color:#fff;margin-bottom:6px">[테스트] {period_label} 파트너사 뉴스</div>
+              <div style="font-size:13px;color:rgba(255,255,255,.65)">총 {total}건 수집 · 검토 후 승인해 주세요</div>
+            </div>
+            <div style="background:#fff;border-radius:12px;padding:20px;margin-bottom:14px;border:1px solid #e2e8f0">
+              {news_html}
+            </div>
+            <div style="text-align:center;margin-bottom:12px">
+              <a href="{review_url}" style="display:inline-block;background:#334155;color:#fff;padding:12px 32px;border-radius:12px;font-size:14px;font-weight:800;text-decoration:none">
+                📝 기사 확인 · 불필요한 기사 삭제
+              </a>
+            </div>
+            <div style="text-align:center;margin-bottom:20px">
+              <a href="{send_url}" style="display:inline-block;background:#1428A0;color:#fff;padding:14px 40px;border-radius:12px;font-size:15px;font-weight:800;text-decoration:none">
+                ✅ 발송 승인 (News Send 실행)
+              </a>
+              <div style="font-size:12px;color:#94a3b8;margin-top:8px">이 메일은 테스트용입니다. News Send는 당월(year_month) 데이터를 기준으로 동작하므로, 테스트 데이터 발송 확인은 news-review.html에서 직접 확인해 주세요.</div>
+            </div>
+          </div>
+          """
+
+          msg = MIMEMultipart('alternative')
+          msg['Subject'] = f"[SSP 뉴스레터 테스트] {period_label} 검토 요청"
+          msg['From'] = f"SSP 협의회 <{GMAIL_USER}>"
+          msg['To'] = "mcsh.kim@samsung.com"
+          msg.attach(MIMEText(f"[테스트] {period_label} 뉴스 {total}건 수집 완료.", 'plain', 'utf-8'))
+          msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+
+          with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+              smtp.login(GMAIL_USER, GMAIL_PW)
+              smtp.sendmail(GMAIL_USER, ["mcsh.kim@samsung.com"], msg.as_string())
+
+          print(f"검토 이메일 발송 완료 → mcsh.kim@samsung.com")
+          print(f"총 {total}건 수집 (기간: {period_label})")
+          PYEOF
